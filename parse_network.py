@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import csv
+>>>>>>> 2cc942f71725aef13d0259efd265b52f6777c5d0
 import snap as s
 import numpy as np
 
@@ -25,6 +29,7 @@ def write_to_graph(load_file_name, save_file_name):
 				print row_number
 
 			data = line.split('\t')
+
 			node = int(data[0])
 			number = np.array(data[2:], dtype=np.int).reshape((int(data[1]), 2))
 
@@ -34,7 +39,7 @@ def write_to_graph(load_file_name, save_file_name):
 					graph.AddNode(node)
 				if not graph.IsNode(n[0]):
 					graph.AddNode(n[0])	
-					
+
 				graph.AddEdge(node, n[0])
 
 				# If flag marked, reciprocal following relation
@@ -42,8 +47,15 @@ def write_to_graph(load_file_name, save_file_name):
 					graph.AddEdge(n[0], node)
 
 	s.SaveEdgeList(graph, save_file_name)
+	return graph
+
+def get_influence_set(graph):
+
+	pass
 
 if __name__ == '__main__':
-	write_to_graph(NETWORK, GRAPH)
+	sina = write_to_graph(NETWORK, GRAPH)
 
+	infl = get_influence_set(sina)
+	
 
