@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 import csv
->>>>>>> 2cc942f71725aef13d0259efd265b52f6777c5d0
 import snap as s
 import numpy as np
 
