@@ -25,8 +25,8 @@ def write_to_graph(load_file_name, save_file_name):
 				continue
 		
 			#row = line
-			if row_number%5000 == 0:
-				print row_number
+			if row_number % 5000 == 0:
+				print(row_number)
 
 			data = line.split('\t')
 
