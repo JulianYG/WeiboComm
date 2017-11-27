@@ -67,7 +67,17 @@ def get_new_MU_SIG(list_of_nodeStats):
     """ Given a list of NodeStats objects, 
     return new dictionaries mapping from nid to new mu and sig values.
     """
-    
+    node_ids = list_of_nodeStats[0].getX().keys()
+    new_MU, new_SIG = {}, {}
+    samples = collections.defaultdict(list)
+    for nodeStat in list_of_nodeStats:
+        X = nodeStat.getX()
+        for nid, x in X.items():
+            samples[nid].append(x)
+
+    for nid in node_ids:
+        new_MU[nid] = np.mean(samples[nid])
+        new_SIG[nid] = np.std(samples[nid])
     return new_MU, new_SIG
 
 
@@ -81,12 +91,12 @@ if __name__ == '__main__':
     retweet_graph = s.LoadEdgeList(s.PNGraph, conf.retweet_file)
 
     graph = Graphize(sina_network)
-    sigma = 0.1
+    avg_sig = 0.1
     node_stats = [NodesStats(sina_network, 0, sigma) for _ in conf.num_examples]
     max_iter = 1000
 
     t = 0
-    while t < max_iter and sigma > conf.epsilon:
+    while t < max_iter and avg_sig > conf.epsilon:
 
         scores = np.array([(graph.evaluate(node_stats[i], 
         	retweet_graph), i) for i in range(conf.num_examples)], dtype=np.float32)
@@ -96,6 +106,8 @@ if __name__ == '__main__':
         # pdate_mu/sigma by refitting mu, sigma on top_m
         for i in range(conf.num_examples):
             node_stats[i].update(new_MU, new_SIG)
+
+        avg_sig = np.mean(new_SIG.values())
 
       
 
