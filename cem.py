@@ -1,5 +1,3 @@
-
-
 # follow_graph: get number of followees 
 
 # Dict: sigma, mu for each node
@@ -12,7 +10,6 @@ import numpy as np
 np.random.seed(42)
 
 class Config:
-    
     def __init__(self):
         
         self.network_file = './data/network_graph_small.txt'
@@ -21,19 +18,35 @@ class Config:
         self.num_examples = 15
         self.num_top = 4
         self.epsilon = 1e-3
-        
+
+
 
 class NodesStats(object):
-    def __init__(self, node_ids, mu, sig):
-        self.node_ids = node_ids
-        self.mu = mu
-        self.sig = sig
-        self.nodes_mu = {}
-        self.nodes_sig = {}
+    """ Represent one set of retweet probabilities for every node
+    """
+    def __init__(self, network_g, initial_mu, initial_sig):
+        outDegV = snap.TIntPrV()
+        snap.GetNodeOutDegV(Graph, OutDegV)
+        self.out_degree_dict = {}
+        self.X = {}
+        for item in OutDegV:
+            nid, deg = item.GetVal1(), item.GetVal2()
+            self.out_degree_dict[nid] = deg
+            self.X[nid] = np.random.normal(1/float(deg) + initial_mu, initial_sig)
+        
+
     
-    def sample(self):
-        for id in node_ids:
-            self.node_mu `
+    def update(self, new_MU, new_SIG):
+        """ Update X (retweet probabilities) for each node.
+        new_MU: dictionary of node_id to corresponding new mu values
+        new_SIG: dictionary of node_id to corresponding new sigma values
+        """
+        for nid, deg in self.out_degree_dict.items():
+            mu, sig = new_MU[nid], new_SIG[nid]
+            self.X[nid] = np.random.normal(mu, sig)
+
+    def getX(self):
+        return self.X
 
 
 class Graphize(object):
@@ -50,26 +63,39 @@ class Graphize(object):
     	pass
         
 
+def get_new_MU_SIG(list_of_nodeStats):
+    """ Given a list of NodeStats objects, 
+    return new dictionaries mapping from nid to new mu and sig values.
+    """
+    
+    return new_MU, new_SIG
+
+
 if __name__ == '__main__':
     
     # load config
     conf = Config()
-    prev_scores, scores = np.ones(conf.num_examples), np.zeros(conf.num_examples)
+    # prev_scores, scores = np.ones(conf.num_examples), np.zeros(conf.num_examples)
     
     sina_network = s.LoadEdgeList(s.PNGraph, conf.sina_network)
     retweet_graph = s.LoadEdgeList(s.PNGraph, conf.retweet_file)
 
     graph = Graphize(sina_network)
-    node_stats = NodesStats(sina_network, conf.num_examples)
-    
-    while np.sum((scores - prev_scores) ** 2) > conf.epsilon:
+    sigma = 0.1
+    node_stats = [NodesStats(sina_network, 0, sigma) for _ in conf.num_examples]
+    max_iter = 1000
 
-        scores = np.array([(graph.evaluate(node_stats, 
+    t = 0
+    while t < max_iter and sigma > conf.epsilon:
+
+        scores = np.array([(graph.evaluate(node_stats[i], 
         	retweet_graph), i) for i in range(conf.num_examples)], dtype=np.float32)
         top_m = [i for (s, i) in sorted(scores)[:conf.num_top]]
         
+        new_MU, new_SIG = get_new_MU_SIG([node_stats[i] for i in top_m])
         # pdate_mu/sigma by refitting mu, sigma on top_m
-        node_stat.update_param(top_m)
+        for i in range(conf.num_examples):
+            node_stats[i].update(new_MU, new_SIG)
 
       
 
