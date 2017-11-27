@@ -18,6 +18,9 @@ class Config:
         self.num_top = 4
         self.epsilon = 1e-3
 
+        self.max_iter = 1000
+        self.avg_sig = 0.1
+
 
 
 class NodesStats(object):
@@ -86,16 +89,15 @@ if __name__ == '__main__':
     conf = Config()
     # prev_scores, scores = np.ones(conf.num_examples), np.zeros(conf.num_examples)
     
-    sina_network = s.LoadEdgeList(s.PNGraph, conf.sina_network)
+    sina_network = s.LoadEdgeList(s.PNGraph, conf.network_file)
     retweet_graph = s.LoadEdgeList(s.PNGraph, conf.retweet_file)
 
     graph = Graphize(sina_network)
-    avg_sig = 0.1
+
     node_stats = [NodesStats(sina_network, 0, sigma) for _ in conf.num_examples]
-    max_iter = 1000
 
     t = 0
-    while t < max_iter and avg_sig > conf.epsilon:
+    while t < max_iter and conf.avg_sig > conf.epsilon:
 
         scores = np.array([(graph.evaluate(node_stats[i], 
         	retweet_graph), i) for i in range(conf.num_examples)], dtype=np.float32)
@@ -106,7 +108,7 @@ if __name__ == '__main__':
         for i in range(conf.num_examples):
             node_stats[i].update(new_MU, new_SIG)
 
-        avg_sig = np.mean(new_SIG.values())
+        conf.avg_sig = np.mean(new_SIG.values())
 
       
 
