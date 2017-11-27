@@ -1,7 +1,6 @@
 # follow_graph: get number of followees 
 
 # Dict: sigma, mu for each node
-
 # retweet_graph: time_stamps
 
 import snap as s 
