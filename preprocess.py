@@ -51,35 +51,63 @@ def parseTime(timestamp):
 	# print t
 	return t
 
+def dfs(curr, source, retweet_people_source, Graph, path, paths, visited, retweet_info):
+	if curr in retweet_people_source:
+		if (source, curr) not in paths:
+			paths[(source, curr)] = []
+		newpath = path+[curr]
+		missing, conflict, correct = pathStats(newpath, retweet_info)
+		paths[(source, curr)].append((newpath, missing, conflict, correct))
+	if curr in visited:
+		return
+	# iterate A's neighbors
+	node_curr = Graph.GetNI(curr)
+	for idx in range(node_A.GetOutDeg()):
+	    B = node_curr.GetOutNId(idx)
+		dfs(B, source, retweet_people_source, Graph, path+[curr], paths, visited)
+	visited.add(curr)
 
-def findPaths(A, retweet_people_A, Graph):
-	paths = set([])
+
+def findPaths(Graph, paths, retweet_info, retweet_people):
+	ori_tweeter = retweet_info.keys()
+	for tweeter in ori_tweeter:
+		visited = set([])
+		path = []
+		dfs(tweeter, tweeter, retweet_people[tweeter], Graph, path, paths, visited, retweet_info)
 
 
-	return paths
-
-def pathStats(path, retweet_info_A):
+def pathStats(path, retweet_info):
 	missing = 0
 	conflict = 0
-	connect = 0
-
+	correct = 0
+	retweet_info_source = retweet_info[path[0]]
+	for tup in retweet_info_source:
+		time, uid_time = tup
+		for i in range(1,len(path)):
+			if path[i] not in uid_time:
+				missing += 1
+			else:
+				if i > 1 and uid_time[path[i]] <= uid_time[path[i-1]]:
+					conflict += 1
+				else:
+					correct += 1
 	return missing, conflict, connect
-
-
 
 
 retweet_file = "../data/data/total.txt"
 following_file = "../data/data/network_graph_small.txt"
 
-# retweet_info = constructRetweetDict(retweet_file)
+paths = {}
+retweet_info, retweet_people = constructRetweetDict(retweet_file)
 
-# Graph = snap.LoadEdgeList(snap.PNGraph, "../data/data/network_graph_small.txt")
+Graph = snap.LoadEdgeList(snap.PNGraph, following_file)
 # print Graph.GetNodes()
 # print Graph.GetEdges()
+findPaths(Graph, paths, retweet_info, retweet_people)
 
-# # save pickle
-# with open('paths.pickle', 'wb') as handle:
-# 	pickle.dump(paths, handle, protocol=pickle.HIGHEST_PROTOCOL)
+# save pickle
+with open('paths.pickle', 'wb') as handle:
+	pickle.dump(paths, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 # # load pickle
