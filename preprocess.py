@@ -37,10 +37,10 @@ def constructRetweetDict(retweet_file):
 						uid_time[uid] = time
 				if original_uid in retweets:
 					retweets[original_uid].append((original_time, uid_time))
-					retweet_people[original_uid].append(people)
+					retweet_people[original_uid] |= people
 				else:
 					retweets[original_uid] = [(original_time, uid_time)]
-					retweet_people[original_uid] = [people]
+					retweet_people[original_uid] = people
 	return retweets, retweet_people
 
 # parse timestamp like 2012-08-15-20:07:32
@@ -57,14 +57,15 @@ def dfs(curr, source, retweet_people_source, Graph, path, paths, visited, retwee
 			paths[(source, curr)] = []
 		newpath = path+[curr]
 		missing, conflict, correct = pathStats(newpath, retweet_info)
+		# missing, conflict, correct = 0,0,0
 		paths[(source, curr)].append((newpath, missing, conflict, correct))
 	if curr in visited:
 		return
 	# iterate A's neighbors
 	node_curr = Graph.GetNI(curr)
-	for idx in range(node_A.GetOutDeg()):
+	for idx in range(node_curr.GetOutDeg()):
 	    B = node_curr.GetOutNId(idx)
-		dfs(B, source, retweet_people_source, Graph, path+[curr], paths, visited)
+	    dfs(B, source, retweet_people_source, Graph, path+[curr], paths, visited, retweet_info)
 	visited.add(curr)
 
 
@@ -73,6 +74,7 @@ def findPaths(Graph, paths, retweet_info, retweet_people):
 	for tweeter in ori_tweeter:
 		visited = set([])
 		path = []
+		# print retweet_people[tweeter]
 		dfs(tweeter, tweeter, retweet_people[tweeter], Graph, path, paths, visited, retweet_info)
 
 
@@ -83,15 +85,41 @@ def pathStats(path, retweet_info):
 	retweet_info_source = retweet_info[path[0]]
 	for tup in retweet_info_source:
 		time, uid_time = tup
+		last_time = time
 		for i in range(1,len(path)):
 			if path[i] not in uid_time:
 				missing += 1
 			else:
-				if i > 1 and uid_time[path[i]] <= uid_time[path[i-1]]:
+				if i > 1 and uid_time[path[i]] <= last_time:
 					conflict += 1
 				else:
 					correct += 1
-	return missing, conflict, connect
+				last_time = uid_time[path[i]]
+	return missing, conflict, correct
+
+
+
+# # ######## toy graph to test 
+# # ######## test dfs(curr, source, retweet_people_source, Graph, path, paths, visited, retweet_info)
+# graph = snap.PNGraph.New()
+# for i in range(4):
+# 	graph.AddNode(i+1)
+# graph.AddEdge(1,4)
+# graph.AddEdge(1,2)
+# graph.AddEdge(1,3)
+# graph.AddEdge(2,3)
+# graph.AddEdge(4,3)
+
+# retweet_info, retweet_people = constructRetweetDict("../data/data/toy_retweet.txt")
+# # print "retweet_info"
+# # print retweet_info
+# # print "retweet_people"
+# # print retweet_people
+
+# paths = {}
+# findPaths(graph, paths, retweet_info, retweet_people)
+# print paths
+
 
 
 retweet_file = "../data/data/total.txt"
