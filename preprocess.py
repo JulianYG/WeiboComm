@@ -126,14 +126,19 @@ retweet_file = "../data/data/total.txt"
 following_file = "../data/data/network_graph_small.txt"
 
 paths = {}
+
+print "processing retweet file..."
 retweet_info, retweet_people = constructRetweetDict(retweet_file)
 
+print "loading following graph..."
 Graph = snap.LoadEdgeList(snap.PNGraph, following_file)
 # print Graph.GetNodes()
 # print Graph.GetEdges()
+print "finding paths..."
 findPaths(Graph, paths, retweet_info, retweet_people)
 
 # save pickle
+print "saving the whole dictionary..."
 with open('paths.pickle', 'wb') as handle:
 	pickle.dump(paths, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
