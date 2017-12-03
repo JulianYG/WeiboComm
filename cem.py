@@ -4,15 +4,18 @@
 # retweet_graph: time_stamps
 
 import snap as s 
-import numpy as np 
+import numpy as np
+import pickle
 
 np.random.seed(42)
+
 
 class Config:
     def __init__(self):
         
         self.network_file = './data/network_graph_small.txt'
         self.retweet_file = './data/network_retweet.txt'
+        self.path_dict = './data/path.pkl'
     
         self.num_examples = 15
         self.num_top = 4
@@ -20,7 +23,6 @@ class Config:
 
         self.max_iter = 1000
         self.avg_sig = 0.1
-
 
 
 class NodesStats(object):
@@ -74,9 +76,6 @@ class NodesStats(object):
         return total_score
 
 
-
-        
-
 def get_new_MU_SIG(list_of_nodeStats):
     """ Given a list of NodeStats objects, 
     return new dictionaries mapping from nid to new mu and sig values.
@@ -102,12 +101,9 @@ if __name__ == '__main__':
     # prev_scores, scores = np.ones(conf.num_examples), np.zeros(conf.num_examples)
     
     sina_network = s.LoadEdgeList(s.PNGraph, conf.network_file)
-    # retweet_graph = s.LoadEdgeList(s.PNGraph, conf.retweet_file)
 
     # TODO: get path_dict from qiwen's code
-    path_dict = None
-
-    graph = Graphize(sina_network)
+    path_dict = pickle.load(conf.path_dict)
 
     node_stats = [NodesStats(sina_network, 0, sigma) for _ in conf.num_examples]
 

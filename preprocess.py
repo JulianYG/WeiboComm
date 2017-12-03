@@ -2,6 +2,9 @@ import pickle
 import snap
 import datetime
 
+from cem import Config
+
+
 # RetweetDict: {A:[(tweet1_time,{B:retweet_time})]}
 def constructRetweetDict(retweet_file):
 	retweets = {}
@@ -120,30 +123,27 @@ def pathStats(path, retweet_info):
 # findPaths(graph, paths, retweet_info, retweet_people)
 # print paths
 
+if __name__ == '__main__':
+
+	conf, paths = Config(), {}
+
+	print('processing retweet file...')
+	retweet_info, retweet_people = constructRetweetDict(conf.retweet_file)
+
+	print('loading following graph...')
+	Graph = snap.LoadEdgeList(snap.PNGraph, conf.network_file)
+	# print Graph.GetNodes()
+	# print Graph.GetEdges()
+	print('finding paths...')
+	findPaths(Graph, paths, retweet_info, retweet_people)
+
+	# save pickle
+	print('saving the whole dictionary...')
+	with open(conf.path_dict, 'wb') as handle:
+		pickle.dump(paths, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-retweet_file = "../data/data/total.txt"
-following_file = "../data/data/network_graph_small.txt"
-
-paths = {}
-
-print "processing retweet file..."
-retweet_info, retweet_people = constructRetweetDict(retweet_file)
-
-print "loading following graph..."
-Graph = snap.LoadEdgeList(snap.PNGraph, following_file)
-# print Graph.GetNodes()
-# print Graph.GetEdges()
-print "finding paths..."
-findPaths(Graph, paths, retweet_info, retweet_people)
-
-# save pickle
-print "saving the whole dictionary..."
-with open('paths.pickle', 'wb') as handle:
-	pickle.dump(paths, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-
-# # load pickle
-# with open('paths.pickle', 'rb') as handle:
-# 	paths = pickle.load(handle)
+	# # load pickle
+	# with open('paths.pickle', 'rb') as handle:
+	# 	paths = pickle.load(handle)
 
