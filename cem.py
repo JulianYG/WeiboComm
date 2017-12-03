@@ -47,7 +47,10 @@ class NodesStats(object):
             mu, sig = new_MU[nid], new_SIG[nid]
             self.X[nid] = np.random.normal(mu, sig)
 
-    def evaluate_assignment(self, path_dict):
+    def evaluate_assignment(self, path_dict, 
+        missing_score=0, 
+        conflict_score=-1, 
+        correct_score=1):
         """ For each assignment of edge probabilities (self.X), assign a score to how well
         this assignments is according to some criterion we learnt from retweet graph. All these
         heuristics learnt from retweet graph is stored in path_dict
@@ -55,16 +58,18 @@ class NodesStats(object):
         path_dict: a dictionary with key being a pair of reachable nodes in retweet graph,
             key being a list of tuples, where each tuple represents a path from the two nodes, and the
             corresponding likelihood of that path.
-            eg. {(A,X): [([A, B, C, X], 3), ([A, D, X], -2)]}
+            eg. {(A,X): [([A, B, C, X], missing, conflict, correct), ([A, D, X], -2)]}
         """
         total_score = 0.0
         for pair, v in path_dict:
             pair_score = [] # list of score that has the length of number of paths between the pair
-            for path, likelihood_score in v:
+            for path, ms, cns, crs in v:
                 normalized_weight = 1.
                 for nid in path:
                     normalized_weight *= float(self.X[nid])/(1./self.out_degree_dict[nid])
-                pair_score.append(normalized_weight*likelihood_score)
+                
+                pair_score.append(normalized_weight * \
+                    (missing_score * ms + conflict_score * cns + correct_score * crs))
 
             # add the average of pair_score to total_score
             total_score += sum(pair_score)/float(len(pair_score))

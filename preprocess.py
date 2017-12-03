@@ -49,10 +49,7 @@ def constructRetweetDict(retweet_file):
 
 # parse timestamp like 2012-08-15-20:07:32
 def parseTime(timestamp):
-	year, month, day, time = timestamp.split('-')
-	hour, minute, second = time.split(':')
-	t = datetime.datetime(int(year), int(month), int(day), int(hour), int(minute), int(second))
-	# print t
+	t = datetime.strptime(timestamp, '%Y-%m-%d-%H:%M:%S')
 	return t
 
 
