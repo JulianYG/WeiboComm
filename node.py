@@ -56,10 +56,11 @@ if __name__ == '__main__':
                 # Note here the order is out link
                 for i in range(deg):
                     neighbor = node.GetOutNId(i)
-                    prob_dict[(nid, neighbor)] = prob[i]
+                    prob_dict[(neighbor, nid)] = prob[i]
 
             print('Writing results into {}...'.format(conf.result))
             with open(conf.result, 'wb') as f:
+                # Format: followee, follower, prob follower retweet followee
                 pickle.dump(prob_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 

@@ -84,6 +84,45 @@ class NodeStat(object):
             total_score += sum(pair_score) / float(len(pair_score))
         return total_score
 
+    @staticmethod
+    def sample_probability(network, mu, sigma):
+
+        # First generate preference indicator for each node
+        preference_dict = collections.defaultdict(float)
+
+        inDegV, indeg = snap.TIntPrV(), collections.defaultdict(int)
+        snap.GetNodeInDegV(network, inDegV)
+        for item in indeg:
+            nid, deg = item.GetVal1(), item.GetVal2()
+            indeg[nid] = deg
+
+        for nid, deg in indeg.items():
+            if deg == 0:
+                continue
+            preference_dict[nid] = np.clip(np.random.normal(mu[nid], sig[nid]), 0., 1.)
+
+        # Next sample probabilities of edges using preference indicators
+        # For NodeStat, X represents likelihood of retweeting other users;
+        # need to calculate probabilities again with edges
+        outDegV, prob_dict = snap.TIntPrV(), collections.defaultdict(float)
+        snap.GetNodeOutDegV(self._graph, outDegV)
+
+        for item in outDegV:
+            nid, deg = item.GetVal1(), item.GetVal2()
+            node = self._graph.GetNI(nid)
+
+            value = np.array([self.X[node.GetOutNId(i)] for i in range(deg)],
+                dtype=np.float32)
+
+            prob = value / value.sum()
+
+            # Note here the order is out link
+            for i in range(deg):
+                neighbor = node.GetOutNId(i)
+                prob_dict[(neighbor, nid)] = prob[i]
+
+        return prob_dict
+
 
 class EdgeStat(object):
 
@@ -162,7 +201,6 @@ class EdgeStat(object):
                 normalized_weight = 1.
 
                 for i in range(len(path) - 1):
-
                     normalized_weight *= self.X[(path[i], 
                         path[i + 1])] * self.in_degree_dict[path[i + 1]]
              
@@ -174,6 +212,40 @@ class EdgeStat(object):
             # add the average of pair_score to total_score
             total_score += sum(pair_score) / float(len(pair_score))
         return total_score
+
+    @staticmethod
+    def sample_probability(network, mu, sigma):
+        """
+        To sample probability for edges, same procedure as update
+        """
+        inDegV, indeg = snap.TIntPrV(), collections.defaultdict(int)
+        snap.GetNodeInDegV(network, inDegV)
+        for item in indeg:
+            nid, deg = item.GetVal1(), item.GetVal2()
+            indeg[nid] = deg
+
+        prob_dict = collections.defaultdict(float)
+
+        for nid, deg in indeg.items():
+            if deg == 0:
+                continue
+
+            node = network.GetNI(nid)
+
+            # Re-sample from new mu and sigma, and normalize
+            new_p = np.clip(
+                np.random.normal(
+                    [mu[(node.GetInNId(i), nid)] for i in range(deg)],
+                    [sig[(node.GetInNId(i), nid)] for i in range(deg)]
+                ), 0., 1.)
+            norm_new_p = new_p / new_p.sum()
+
+            # Prob normalized version of edges
+            for i in range(deg):
+                neighbor = node.GetInNId(i)
+                prob_dict[(neighbor, nid)] = norm_new_p[i]
+
+        return prob_dict
 
 
 def get_new_stats(stats_lst):

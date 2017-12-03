@@ -55,7 +55,9 @@ if __name__ == '__main__':
 
 			# For edgeStat, X represents edge probability of retweeting its neighbor
 		    with open(conf.result, 'wb') as f:
-		        pickle.dump(stats[top_m[0]].X, f, protocol=pickle.HIGHEST_PROTOCOL)
+                # mu, sigma; gaussian distribution of the probability
+                # meaning: followee, follower, prob follower retweet followee
+		        pickle.dump({'mu': new_MU, 'sigma': new_SIG}, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
     
