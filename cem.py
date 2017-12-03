@@ -38,8 +38,6 @@ class NodesStats(object):
             self.out_degree_dict[nid] = deg
             self.X[nid] = np.random.normal(1./deg + initial_mu, initial_sig)
         
-
-    
     def update(self, new_MU, new_SIG):
         """ Update X (retweet probabilities) for each node.
         new_MU: dictionary of node_id to corresponding new mu values
@@ -48,9 +46,6 @@ class NodesStats(object):
         for nid, deg in self.out_degree_dict.items():
             mu, sig = new_MU[nid], new_SIG[nid]
             self.X[nid] = np.random.normal(mu, sig)
-
-    def getX(self):
-        return self.X
 
     def evaluate_assignment(self, path_dict):
         """ For each assignment of edge probabilities (self.X), assign a score to how well
@@ -80,11 +75,11 @@ def get_new_MU_SIG(list_of_nodeStats):
     """ Given a list of NodeStats objects, 
     return new dictionaries mapping from nid to new mu and sig values.
     """
-    node_ids = list_of_nodeStats[0].getX().keys()
+    node_ids = list_of_nodeStats[0].X.keys()
     new_MU, new_SIG = {}, {}
     samples = collections.defaultdict(list)
     for nodeStat in list_of_nodeStats:
-        X = nodeStat.getX()
+        X = nodeStat.X
         for nid, x in X.items():
             samples[nid].append(x)
 
