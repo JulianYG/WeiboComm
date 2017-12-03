@@ -132,10 +132,10 @@ class EdgeStat(object):
             # Re-sample from new mu and sigma, and normalize
             new_p = np.clip(
                 np.random.normal(
-                    [mu[(nid, node.GetInNId(i))] for i in range(deg)],
-                    [sig[(nid, node.GetInNId(i))] for i in range(deg)]
+                    [mu[(node.GetInNId(i), nid)] for i in range(deg)],
+                    [sig[(node.GetInNId(i), nid)] for i in range(deg)]
                 ), 0., 1.)
-            norm_new_p = new_p / p.sum()
+            norm_new_p = new_p / new_p.sum()
 
             # Prob normalized version of edges
             for i in range(deg):
@@ -244,6 +244,9 @@ if __name__ == '__main__':
         t += 1
 
     print('Writing results into {}...'.format(conf.result))
+
+    # For NodeStat, X represents likelihood of retweeting other users;
+    # for edgeStat, X represents edge probability of retweeting its neighbor
     with open(conf.result, 'wb') as f:
         pickle.dump(stats.X, f, protocol=pickle.HIGHEST_PROTOCOL)
 
