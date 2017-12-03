@@ -16,8 +16,8 @@ def constructRetweetDict(retweet_file):
 	with open(retweet_file) as f:
 		for line in f:
 			row_number += 1
-			if row_number%10000 == 0:
-				print row_number
+			if row_number % 10000 == 0:
+				print(row_number)
 			elements = line.split()
 			if row_number % 2 == 1:
 				original_time = parseTime(elements[1])
@@ -49,15 +49,14 @@ def constructRetweetDict(retweet_file):
 
 # parse timestamp like 2012-08-15-20:07:32
 def parseTime(timestamp):
-	t = datetime.strptime(timestamp, '%Y-%m-%d-%H:%M:%S')
-	return t
+	return datetime.datetime.strptime(timestamp, '%Y-%m-%d-%H:%M:%S')
 
 
 def dfs(curr, source, retweet_people_source, Graph, path, paths, visited, retweet_info):
 	if curr in retweet_people_source:
 		if (source, curr) not in paths:
 			paths[(source, curr)] = []
-		newpath = path+[curr]
+		newpath = path + [curr]
 		missing, conflict, correct = pathStats(newpath, retweet_info)
 		# missing, conflict, correct = 0,0,0
 		paths[(source, curr)].append((newpath, missing, conflict, correct))
@@ -131,8 +130,7 @@ if __name__ == '__main__':
 
 	print('loading following graph...')
 	Graph = snap.LoadEdgeList(snap.PNGraph, conf.network_file)
-	# print Graph.GetNodes()
-	# print Graph.GetEdges()
+
 	print('finding paths...')
 	findPaths(Graph, paths, retweet_info, retweet_people)
 
