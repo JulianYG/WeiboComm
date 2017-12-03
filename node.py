@@ -18,7 +18,7 @@ if __name__ == '__main__':
     stats = [NodeStat(sina_network, conf.mu, conf.sigma) for _ in range(conf.num_examples)]
 
     t = 0
-    while t < conf.max_iter and conf.avg_sig > conf.epsilon:
+    while t < conf.max_iter:
 
         print('Iteration {}....'.format(t))
         scores = [(stats[i].evaluate_assignment(path_dict), i)\
@@ -36,29 +36,31 @@ if __name__ == '__main__':
         print('Average sigma this iter: {}'.format(conf.avg_sig))
         t += 1
 
-    # For NodeStat, X represents likelihood of retweeting other users;
-    # need to calculate probabilities again with edges
-    outDegV = snap.TIntPrV()
-    snap.GetNodeOutDegV(sina_network, outDegV)
-    prob_dict = {}
+        if conf.avg_sig < conf.epsilon:
 
-    for item in outDegV:
-        nid, deg = item.GetVal1(), item.GetVal2()
-        node = sina_network.GetNI(nid)
+            # For NodeStat, X represents likelihood of retweeting other users;
+            # need to calculate probabilities again with edges
+            outDegV = snap.TIntPrV()
+            snap.GetNodeOutDegV(sina_network, outDegV)
+            prob_dict = {}
 
-        value = np.array([stats.X[node.GetOutNId(i)] for i in range(deg)],
-            dtype=np.float32)
+            for item in outDegV:
+                nid, deg = item.GetVal1(), item.GetVal2()
+                node = sina_network.GetNI(nid)
 
-        prob = value / value.sum()
+                value = np.array([stats[top_m[0]].X[node.GetOutNId(i)] for i in range(deg)],
+                    dtype=np.float32)
 
-        # Note here the order is out link
-        for i in range(deg):
-            neighbor = node.GetOutNId(i)
-            prob_dict[(nid, neighbor)] = prob[i]
+                prob = value / value.sum()
 
-    print('Writing results into {}...'.format(conf.result))
-    with open(conf.result, 'wb') as f:
-        pickle.dump(prob_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+                # Note here the order is out link
+                for i in range(deg):
+                    neighbor = node.GetOutNId(i)
+                    prob_dict[(nid, neighbor)] = prob[i]
+
+            print('Writing results into {}...'.format(conf.result))
+            with open(conf.result, 'wb') as f:
+                pickle.dump(prob_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 

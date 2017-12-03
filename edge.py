@@ -21,7 +21,7 @@ if __name__ == '__main__':
     max_mu_update, max_sig_update = 1e3, 1e3
 
     t, old_mu, old_sig = 0, collections.defaultdict(lambda: conf.mu, {}), collections.defaultdict(lambda: conf.sigma, {})
-    while t < conf.max_iter and (max_mu_update > conf.epsilon or max_sig_update > conf.epsilon):
+    while t < conf.max_iter:
 
         print('Iteration {}....'.format(t))
         scores = [(stats[i].evaluate_assignment(path_dict), i)\
@@ -49,11 +49,13 @@ if __name__ == '__main__':
             max_sig_update))
         t += 1
 
-    print('Writing results into {}...'.format(conf.result))
+        if max_mu_update < conf.epsilon and max_sig_update < conf.epsilon:
 
-	# For edgeStat, X represents edge probability of retweeting its neighbor
-    with open(conf.result, 'wb') as f:
-        pickle.dump(stats.X, f, protocol=pickle.HIGHEST_PROTOCOL)
+		    print('Writing results into {}...'.format(conf.result))
+
+			# For edgeStat, X represents edge probability of retweeting its neighbor
+		    with open(conf.result, 'wb') as f:
+		        pickle.dump(stats[top_m[0]].X, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
     
