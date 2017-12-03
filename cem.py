@@ -73,7 +73,7 @@ class NodeStat(object):
             for path, ms, cns, crs in v:
                 normalized_weight = 1.
                 for nid in path[1:]:
-                    normalized_weight *= self.X[nid] / (1. / self.in_degree_dict[nid])
+                    normalized_weight *= self.X[nid] * self.in_degree_dict[nid]
                 
                 score = normalized_weight * \
                     (missing_score * ms + conflict_score * cns + correct_score * crs)
@@ -164,7 +164,7 @@ class EdgeStat(object):
                 for i in range(len(path) - 1):
 
                     normalized_weight *= self.X[(path[i], 
-                        path[i + 1])] / (1. / self.in_degree_dict[path[i + 1]])
+                        path[i + 1])] * self.in_degree_dict[path[i + 1]]
              
                 score = normalized_weight * \
                     (missing_score * ms + conflict_score * cns + correct_score * crs)
