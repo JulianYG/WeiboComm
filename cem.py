@@ -51,7 +51,7 @@ class NodeStat(object):
             if deg == 0:
                 continue
             mu, sig = new_MU[nid], new_SIG[nid]
-            self.X[nid] = np.random.normal(mu, sig)
+            self.X[nid] = np.clip(np.random.normal(mu, sig), 0., 1.)
 
     def evaluate_assignment(self, path_dict, 
         missing_score=0, 
@@ -74,7 +74,7 @@ class NodeStat(object):
                 normalized_weight = 1.
                 for nid in path[1:]:
                     normalized_weight *= self.X[nid] * self.in_degree_dict[nid]
-                
+                    
                 score = normalized_weight * \
                     (missing_score * ms + conflict_score * cns + correct_score * crs)
 
@@ -201,52 +201,13 @@ class Config:
         self.retweet_file = './data/total.txt'
         self.path_dict = './data/path.pkl'
         self.result = './data/edge_res.pkl'
-
-        self.stat = EdgeStat
     
-        self.num_examples = 128
-        self.num_top = 16
+        self.num_examples = 32
+        self.num_top = 6
         self.epsilon = 1e-3
         self.sigma = 0.01
+        self.mu = 0.
 
         self.max_iter = 1000
         self.avg_sig = 0.1
-
-
-if __name__ == '__main__':
-    
-    # load config
-    conf = Config()
-    # prev_scores, scores = np.ones(conf.num_examples), np.zeros(conf.num_examples)
-    
-    sina_network = snap.LoadEdgeList(snap.PNGraph, conf.network_file)
-
-    # TODO: get path_dict from qiwen's code
-    with open(conf.path_dict, 'rb') as f:
-        path_dict = pickle.load(f)
-    stats = [conf.stat(sina_network, 0, conf.sigma) for _ in range(conf.num_examples)]
-
-    t = 0
-    while t < conf.max_iter and conf.avg_sig > conf.epsilon:
-
-        print('Iteration {}....'.format(t))
-        scores = [(stats[i].evaluate_assignment(path_dict), i)\
-            for i in range(conf.num_examples)]
-        top_m = [i for (s, i) in sorted(scores)[:conf.num_top]]
-        new_MU, new_SIG = get_new_stats([stats[i] for i in top_m])
-
-        # pdate_mu/sigma by refitting mu, sigma on top_m
-        for i in range(conf.num_examples):
-            stats[i].update(new_MU, new_SIG)
-
-        conf.avg_sig = np.mean(new_SIG.values())
-        print('Average sigma this iter: {}'.format(conf.avg_sig))
-        t += 1
-
-    print('Writing results into {}...'.format(conf.result))
-
-    # For NodeStat, X represents likelihood of retweeting other users;
-    # for edgeStat, X represents edge probability of retweeting its neighbor
-    with open(conf.result, 'wb') as f:
-        pickle.dump(stats.X, f, protocol=pickle.HIGHEST_PROTOCOL)
 
