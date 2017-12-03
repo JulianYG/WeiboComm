@@ -46,6 +46,7 @@ def constructRetweetDict(retweet_file):
 					retweet_people[original_uid] = people
 	return retweets, retweet_people
 
+
 # parse timestamp like 2012-08-15-20:07:32
 def parseTime(timestamp):
 	year, month, day, time = timestamp.split('-')
@@ -53,6 +54,7 @@ def parseTime(timestamp):
 	t = datetime.datetime(int(year), int(month), int(day), int(hour), int(minute), int(second))
 	# print t
 	return t
+
 
 def dfs(curr, source, retweet_people_source, Graph, path, paths, visited, retweet_info):
 	if curr in retweet_people_source:

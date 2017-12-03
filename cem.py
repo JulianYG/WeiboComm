@@ -36,7 +36,7 @@ class NodesStats(object):
         for item in OutDegV:
             nid, deg = item.GetVal1(), item.GetVal2()
             self.out_degree_dict[nid] = deg
-            self.X[nid] = np.random.normal(1/float(deg) + initial_mu, initial_sig)
+            self.X[nid] = np.random.normal(1./deg + initial_mu, initial_sig)
         
 
     
@@ -66,9 +66,9 @@ class NodesStats(object):
         for pair, v in path_dict:
             pair_score = [] # list of score that has the length of number of paths between the pair
             for path, likelihood_score in v:
-                normalized_weight = 1
+                normalized_weight = 1.
                 for nid in path:
-                    normalized_weight *= float(self.X[nid])/(1/self.out_degree_dict[nid])
+                    normalized_weight *= float(self.X[nid])/(1./self.out_degree_dict[nid])
                 pair_score.append(normalized_weight*likelihood_score)
 
             # add the average of pair_score to total_score
