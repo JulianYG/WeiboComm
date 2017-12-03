@@ -40,8 +40,8 @@ if __name__ == '__main__':
         for i in range(conf.num_examples):
             stats[i].update(new_MU, new_SIG)
 
-        max_mu_update = np.abs(np.max(np.array(new_MU.values()) - old_mu))
-        max_sig_update = np.abs(np.max(np.array(new_SIG.values()) - old_sig))
+        max_mu_update = np.max(np.abs(np.array(new_MU.values()) - old_mu))
+        max_sig_update = np.max(np.abs(np.array(new_SIG.values()) - old_sig))
         old_mu = np.array(new_MU.values())
         old_sig = np.array(new_SIG.values())
 
@@ -51,10 +51,10 @@ if __name__ == '__main__':
 
         if max_mu_update < conf.epsilon and max_sig_update < conf.epsilon:
 
-		    print('Writing results into {}...'.format(conf.result))
+		    print('Writing results into {}...'.format(conf.edge_result))
 
 			# For edgeStat, X represents edge probability of retweeting its neighbor
-		    with open(conf.result, 'wb') as f:
+		    with open(conf.edge_result, 'wb') as f:
                 # mu, sigma; gaussian distribution of the probability
                 # meaning: followee, follower, prob follower retweet followee
 		        pickle.dump({'mu': new_MU, 'sigma': new_SIG}, f, protocol=pickle.HIGHEST_PROTOCOL)

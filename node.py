@@ -38,30 +38,10 @@ if __name__ == '__main__':
 
         if conf.avg_sig < conf.epsilon:
 
-            # For NodeStat, X represents likelihood of retweeting other users;
-            # need to calculate probabilities again with edges
-            outDegV = snap.TIntPrV()
-            snap.GetNodeOutDegV(sina_network, outDegV)
-            prob_dict = {}
-
-            for item in outDegV:
-                nid, deg = item.GetVal1(), item.GetVal2()
-                node = sina_network.GetNI(nid)
-
-                value = np.array([stats[top_m[0]].X[node.GetOutNId(i)] for i in range(deg)],
-                    dtype=np.float32)
-
-                prob = value / value.sum()
-
-                # Note here the order is out link
-                for i in range(deg):
-                    neighbor = node.GetOutNId(i)
-                    prob_dict[(neighbor, nid)] = prob[i]
-
-            print('Writing results into {}...'.format(conf.result))
-            with open(conf.result, 'wb') as f:
+            print('Writing results into {}...'.format(conf.node_result))
+            with open(conf.node_result, 'wb') as f:
                 # Format: followee, follower, prob follower retweet followee
-                pickle.dump(prob_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump({'mu': new_MU, 'sigma': new_SIG}, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 

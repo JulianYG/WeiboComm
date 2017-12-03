@@ -272,7 +272,8 @@ class Config:
         self.network_file = './data/network_graph_small_small.txt'
         self.retweet_file = './data/total.txt'
         self.path_dict = './data/path.pkl'
-        self.result = './data/edge_res.pkl'
+        self.edge_result = './data/edge_res_small_small.pkl'
+        self.node_result = './data/node_res_small_small.pkl'
     
         self.num_examples = 32
         self.num_top = 6
