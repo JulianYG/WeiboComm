@@ -28,7 +28,7 @@ class NodesStats(object):
     """
     def __init__(self, network_g, initial_mu, initial_sig):
         outDegV = snap.TIntPrV()
-        snap.GetNodeOutDegV(Graph, OutDegV)
+        snap.GetNodeOutDegV(network_g, OutDegV)
         self.out_degree_dict = {}
         self.X = {}
         for item in OutDegV:
@@ -50,19 +50,31 @@ class NodesStats(object):
     def getX(self):
         return self.X
 
+    def evaluate_assignment(self, path_dict):
+        """ For each assignment of edge probabilities (self.X), assign a score to how well
+        this assignments is according to some criterion we learnt from retweet graph. All these
+        heuristics learnt from retweet graph is stored in path_dict
 
-class Graphize(object):
+        path_dict: a dictionary with key being a pair of reachable nodes in retweet graph,
+            key being a list of tuples, where each tuple represents a path from the two nodes, and the
+            corresponding likelihood of that path.
+            eg. {(A,X): [([A, B, C, X], 3), ([A, D, X], -2)]}
+        """
+        total_score = 0.0
+        for pair, v in path_dict:
+            pair_score = [] # list of score that has the length of number of paths between the pair
+            for path, likelihood_score in v:
+                normalized_weight = 1
+                for nid in path:
+                    normalized_weight *= float(self.X[nid])/(1/self.out_degree_dict[nid])
+                pair_score.append(normalized_weight*likelihood_score)
+
+            # add the average of pair_score to total_score
+            total_score += sum(pair_score)/float(len(pair_score))
+        return total_score
 
 
-    def __init__(self, network_g, ):
-        self._network = network_g
 
-    def _find_path(node_stat, ):
-    	pass
-
-    def evaluate(node_stat, retweet_g):
-    	
-    	pass
         
 
 def get_new_MU_SIG(list_of_nodeStats):
@@ -90,7 +102,10 @@ if __name__ == '__main__':
     # prev_scores, scores = np.ones(conf.num_examples), np.zeros(conf.num_examples)
     
     sina_network = s.LoadEdgeList(s.PNGraph, conf.network_file)
-    retweet_graph = s.LoadEdgeList(s.PNGraph, conf.retweet_file)
+    # retweet_graph = s.LoadEdgeList(s.PNGraph, conf.retweet_file)
+
+    # TODO: get path_dict from qiwen's code
+    path_dict = None
 
     graph = Graphize(sina_network)
 
@@ -99,8 +114,8 @@ if __name__ == '__main__':
     t = 0
     while t < max_iter and conf.avg_sig > conf.epsilon:
 
-        scores = np.array([(graph.evaluate(node_stats[i], 
-        	retweet_graph), i) for i in range(conf.num_examples)], dtype=np.float32)
+        scores = np.array([(node_stats[i].evaluate_assignment(path_dict)
+            , i) for i in range(conf.num_examples)], dtype=np.float32)
         top_m = [i for (s, i) in sorted(scores)[:conf.num_top]]
         
         new_MU, new_SIG = get_new_MU_SIG([node_stats[i] for i in top_m])
