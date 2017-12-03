@@ -204,10 +204,10 @@ class Config:
     
         self.num_examples = 32
         self.num_top = 6
-        self.epsilon = 1e-3
+        self.epsilon = 1e-5
         self.sigma = 0.01
         self.mu = 0.
 
-        self.max_iter = 1000
+        self.max_iter = 200
         self.avg_sig = 0.1
 
