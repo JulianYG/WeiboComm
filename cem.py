@@ -108,7 +108,7 @@ class NodeStat(Stat):
         max_out_deg = self._graph.GetNI(max_out_nid).GetOutDeg()
 
         for item in outdeg:
-            nid, deg = item.GetVal1(), item.GetVal2()
+            nid, deg = item.GetVal1(), float(item.GetVal2())
             
             # Initialized according to scaled number of followers
             self.P[nid] = np.random.normal(
@@ -248,7 +248,7 @@ class Config:
         self.num_examples = 32
         self.num_top = 5
         self.epsilon = 1e-4
-        self.sigma_ratio = 0.3
+        self.sigma_ratio = 0.25
         self.mu = 0.
 
         self.max_iter = 200
