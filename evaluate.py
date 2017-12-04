@@ -42,13 +42,13 @@ if __name__ == '__main__':
     node_prob = np.array(node_edge_prob.values(), dtype=np.float32)
     edge_prob = np.array(edge_edge_prob.values(), dtype=np.float32)
 
-    diff = node_prob - edge_prob
+    diff = np.abs(node_prob - edge_prob)
 
     print('Mean, standard deviation of probability difference vectors: {}, {}'.format(
         np.mean(diff), np.std(diff)))
 
     print('Maximum, minimum difference between probability vectors: {}, {}'.format(
-        np.max(np.abs(node_prob - edge_prob)), np.min(np.abs(node_prob - edge_prob))))
+        np.max(diff), np.min(diff)))
 
     print('Entropy, energy of probability difference vectors: {}, {}'.format(
         sp.entropy(diff), np.linalg.norm(diff)))
