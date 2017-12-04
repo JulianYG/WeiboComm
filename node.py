@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 import collections
 
-from cem import NodeStat, Config, get_new_stats
+from cem import NodeStat, Config
 
 if __name__ == '__main__':
 
@@ -26,11 +26,11 @@ if __name__ == '__main__':
         top_scores = sorted(scores, reverse=True, key=lambda x: x[0])[:conf.num_top]
         top_m = [i for (s, i) in top_scores]
         print('Top scores: {}'.format(top_scores))
-        new_MU, new_SIG = get_new_stats([stats[i] for i in top_m])
+        new_MU, new_SIG = NodeStat.update_stat([stats[i].P for i in top_m])
 
         # pdate_mu/sigma by refitting mu, sigma on top_m
         for i in range(conf.num_examples):
-            stats[i].update(new_MU, new_SIG)
+            stats[i].update_network(new_MU, new_SIG)
 
         conf.avg_sig = np.mean(new_SIG.values())
         print('Average sigma this iter: {}'.format(conf.avg_sig))
@@ -43,5 +43,5 @@ if __name__ == '__main__':
                 # Format: followee, follower, prob follower retweet followee
                 pickle.dump({'mu': new_MU, 'sigma': new_SIG}, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-
+            break
 

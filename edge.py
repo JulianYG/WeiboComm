@@ -4,12 +4,12 @@ import numpy as np
 import pickle
 import collections
 
-from cem import EdgeStat, Config, get_new_stats
+from cem import EdgeStat, Config
 
 
 if __name__ == '__main__':
 
-	# load config
+    # load config
     conf = Config()    
     sina_network = snap.LoadEdgeList(snap.PNGraph, conf.network_file)
 
@@ -29,7 +29,7 @@ if __name__ == '__main__':
         top_scores = sorted(scores, reverse=True, key=lambda x: x[0])[:conf.num_top]
         top_m = [i for (s, i) in top_scores]
         print('Top scores: {}'.format(top_scores))
-        new_MU, new_SIG = get_new_stats([stats[i] for i in top_m])
+        new_MU, new_SIG = EdgeStat.update_stat([stats[i].X for i in top_m])
 
         # Act as a placeholder
         if t == 0:
@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
         # pdate_mu/sigma by refitting mu, sigma on top_m
         for i in range(conf.num_examples):
-            stats[i].update(new_MU, new_SIG)
+            stats[i].update_network(new_MU, new_SIG)
 
         max_mu_update = np.max(np.abs(np.array(new_MU.values()) - old_mu))
         max_sig_update = np.max(np.abs(np.array(new_SIG.values()) - old_sig))
@@ -49,15 +49,15 @@ if __name__ == '__main__':
             max_sig_update))
         t += 1
 
-        if max_mu_update < conf.epsilon and max_sig_update < conf.epsilon:
+        if t == 1 or max_mu_update < conf.epsilon and max_sig_update < conf.epsilon:
 
-		    print('Writing results into {}...'.format(conf.edge_result))
+            print('Writing results into {}...'.format(conf.edge_result))
 
-			# For edgeStat, X represents edge probability of retweeting its neighbor
-		    with open(conf.edge_result, 'wb') as f:
+            # For edgeStat, X represents edge probability of retweeting its neighbor
+            with open(conf.edge_result, 'wb') as f:
                 # mu, sigma; gaussian distribution of the probability
                 # meaning: followee, follower, prob follower retweet followee
-		        pickle.dump({'mu': new_MU, 'sigma': new_SIG}, f, protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump({'mu': new_MU, 'sigma': new_SIG}, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-
+            break
     
