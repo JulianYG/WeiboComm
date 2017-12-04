@@ -13,7 +13,7 @@ np.random.seed(42)
 
 class Stat(object):
 
-    def __init__(self, network_g, initial_mu, initial_sig):
+    def __init__(self, network_g, initial_mu, sigma_ratio):
 
         self._graph = network_g
 
@@ -22,7 +22,7 @@ class Stat(object):
 
         # The popularity dictionary
         self.P = collections.defaultdict(float)
-        self._initialize(initial_mu, initial_sig)
+        self._initialize(initial_mu, sigma_ratio)
 
     def _initalize(self, mu, sigma):
         return NotImplemented
@@ -91,12 +91,12 @@ class NodeStat(Stat):
     """ 
     Represent one set of retweet probabilities for every node
     """
-    def __init__(self, network_g, initial_mu, initial_sig):
+    def __init__(self, network_g, initial_mu, sigma_ratio):
 
         # represents the popularity of each node
-        super(NodeStat, self).__init__(network_g, initial_mu, initial_sig)
+        super(NodeStat, self).__init__(network_g, initial_mu, sigma_ratio)
 
-    def _initialize(self, mu, sigma):
+    def _initialize(self, mu, sigma_ratio):
         """
         NodeStat uses out links to initalize popularity, 
         then sample edge probabilities using in links
@@ -112,7 +112,7 @@ class NodeStat(Stat):
             
             # Initialized according to scaled number of followers
             self.P[nid] = np.random.normal(
-                deg / max_out_deg + mu, sigma)
+                deg / max_out_deg + mu, deg / max_out_deg * sigma_ratio)
 
         self.X = NodeStat._compute_prob(self._graph, self.P)
 
@@ -130,17 +130,14 @@ class NodeStat(Stat):
                 continue
             node = network.GetNI(nid)
 
-            value = np.clip([P[node.GetInNId(i)] for i in range(deg)],
+            prob = np.clip([P[node.GetInNId(i)] for i in range(deg)],
                 0., None)
 
             # Handle corner cases
-            if value.sum() == 0:
-                if len(value) == 0:
-                    prob = 1.
-                else:
-                    prob = value / len(value)
-            else:
-                prob = value / value.sum()
+            if prob.sum() == 0:
+                prob = np.ones(deg, dtype=np.float32)
+           
+            prob /= prob.sum()
 
             # Note here the order is out link
             for i in range(deg):
@@ -163,11 +160,11 @@ class NodeStat(Stat):
 
 class EdgeStat(Stat):
 
-    def __init__(self, network_g, initial_mu, initial_sig):
+    def __init__(self, network_g, initial_mu, sigma_ratio):
 
-        super(EdgeStat, self).__init__(network_g, initial_mu, initial_sig)
+        super(EdgeStat, self).__init__(network_g, initial_mu, sigma_ratio)
 
-    def _initialize(self, mu, sigma):
+    def _initialize(self, mu, sigma_ratio):
 
         indeg = snap.TIntPrV()
         snap.GetNodeInDegV(self._graph, indeg)
@@ -181,13 +178,18 @@ class EdgeStat(Stat):
 
             # Sample a random probability for each in link
             p = np.clip(np.random.normal(
-                1. / deg + np.ones(deg) * mu, 
-                np.ones(deg) * sigma), 0., 1.)
-            norm_p = p / p.sum()
+                np.ones(deg, dtype=np.float32) / deg, 
+                sigma_ratio / np.ones(deg)), 0., 1.)
+
+            # Handle corner cases
+            if p.sum() == 0:
+                p = np.ones(deg, dtype=np.float32)
+            
+            p /= p.sum()
 
             for i in range(deg):
                 neighbor = node.GetInNId(i)
-                self.X[(neighbor, nid)] = norm_p[i]
+                self.X[(neighbor, nid)] = p[i]
 
     @staticmethod
     def sample_probability(network, mu, sigma):
@@ -214,12 +216,16 @@ class EdgeStat(Stat):
                     [mu[(node.GetInNId(i), nid)] for i in range(deg)],
                     [sigma[(node.GetInNId(i), nid)] for i in range(deg)]
                 ), 0., 1.)
-            norm_new_p = new_p / new_p.sum()
+
+            if new_p.sum() == 0:
+                new_p = np.ones(deg, dtype=np.float32)
+
+            new_p /= new_p.sum()
 
             # Prob normalized version of edges
             for i in range(deg):
                 neighbor = node.GetInNId(i)
-                prob_dict[(neighbor, nid)] = norm_new_p[i]
+                prob_dict[(neighbor, nid)] = new_p[i]
             visited.add(nid)
 
         return {}, prob_dict
@@ -233,13 +239,17 @@ class Config:
         self.path_dict = './data/path.pkl'
         self.edge_result = './data/edge_res_small_small.pkl'
         self.node_result = './data/node_res_small_small.pkl'
+
+        self.node_log = './log/node.txt'
+        self.node_plot = './log/node.png'
+        self.edge_log = './log/edge.txt'
+        self.edge_plot = './log/edge.png'
     
         self.num_examples = 32
-        self.num_top = 6
-        self.epsilon = 0.01#1e-5
-        self.sigma = 0.01
+        self.num_top = 5
+        self.epsilon = 1e-4
+        self.sigma_ratio = 0.3
         self.mu = 0.
 
         self.max_iter = 200
-        self.avg_sig = 0.1
 

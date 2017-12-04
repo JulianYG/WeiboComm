@@ -21,6 +21,8 @@ if __name__ == '__main__':
         node_dist = pickle.load(f)
 
     print('Sampling probabilities...')
+
+    # Can use empty dict for sigma here, if choose deterministic
     _, node_edge_prob = NodeStat.sample_probability(
         sina_network, node_dist['mu'], node_dist['sigma'])
 
