@@ -2,7 +2,8 @@ import pickle
 import snap
 import datetime
 
-max_path_len = 100
+from cem import Config
+
 
 # RetweetDict: {A:[(tweet1_time,{B:retweet_time})]}
 def constructRetweetDict(retweet_file):
@@ -47,14 +48,10 @@ def constructRetweetDict(retweet_file):
 
 # parse timestamp like 2012-08-15-20:07:32
 def parseTime(timestamp):
-	year, month, day, time = timestamp.split('-')
-	hour, minute, second = time.split(':')
-	t = datetime.datetime(int(year), int(month), int(day), int(hour), int(minute), int(second))
-	# print t
-	return t
+	return datetime.datetime.strptime(timestamp, '%Y-%m-%d-%H:%M:%S')
 
-def dfs(curr, source, retweet_people_source, Graph, path, paths, visited, retweet_info):
-	print curr
+
+def dfs(curr, source, retweet_people_source, Graph, path, paths, visited, retweet_info, max_path_len):
 	if curr in retweet_people_source:
 		if (source, curr) not in paths:
 			paths[(source, curr)] = []
@@ -73,12 +70,10 @@ def dfs(curr, source, retweet_people_source, Graph, path, paths, visited, retwee
 	for idx in range(node_curr.GetOutDeg()):
 
 	    B = node_curr.GetOutNId(idx)
-	    # print B
-	    dfs(B, source, retweet_people_source, Graph, path+[curr], paths, visited, retweet_info)
+	    dfs(B, source, retweet_people_source, Graph, path+[curr], paths, visited, retweet_info, max_path_len)
 	
 
-
-def findPaths(Graph, paths, retweet_info, retweet_people):
+def findPaths(Graph, paths, retweet_info, retweet_people, max_path_len):
 	ori_tweeter = retweet_info.keys()
 	for tweeter in ori_tweeter:
 		if not Graph.IsNode(tweeter):
@@ -86,7 +81,7 @@ def findPaths(Graph, paths, retweet_info, retweet_people):
 		visited = set([])
 		path = []
 		# print retweet_people[tweeter]
-		dfs(tweeter, tweeter, retweet_people[tweeter], Graph, path, paths, visited, retweet_info)
+		dfs(tweeter, tweeter, retweet_people[tweeter], Graph, path, paths, visited, retweet_info, max_path_len)
 
 
 def pathStats(path, retweet_info):
@@ -133,40 +128,29 @@ def pathStats(path, retweet_info):
 # print paths
 # ########################################## toy example end 
 
-retweet_file = "../data/data/total.txt"
-following_file = "../data/data/network_graph_medium.txt"
+if __name__ == '__main__':
 
-paths = {}
+	conf, paths = Config(), {}
 
-print "processing retweet file..."
-retweet_info, retweet_people = constructRetweetDict(retweet_file)
+	max_path_len = conf.max_path_len
 
-# # save pickle
-# print "saving the retweet info..."
-# with open('../data/data/retweet_info.pickle', 'wb') as handle:
-# 	pickle.dump(retweet_info, handle, protocol=pickle.HIGHEST_PROTOCOL)
+	print('processing retweet file...')
+	retweet_info, retweet_people = constructRetweetDict(conf.retweet_file)
 
-# print "saving the retweet people..."
-# with open('../data/data/retweet_people.pickle', 'wb') as handle:
-# 	pickle.dump(retweet_info, handle, protocol=pickle.HIGHEST_PROTOCOL)
+	print('loading following graph...')
+	Graph = snap.LoadEdgeList(snap.PNGraph, conf.network_file)
 
+	print('finding paths...')
+	findPaths(Graph, paths, retweet_info, retweet_people, max_path_len)
 
-
-print "loading following graph..."
-Graph = snap.LoadEdgeList(snap.PNGraph, following_file)
-# print Graph.GetNodes()
-# print Graph.GetEdges()
-print "finding paths..."
-findPaths(Graph, paths, retweet_info, retweet_people)
-
-# save pickle
-print "saving the whole dictionary..."
-with open('paths_medium.pickle', 'wb') as handle:
-	pickle.dump(paths, handle, protocol=pickle.HIGHEST_PROTOCOL)
+	# save pickle
+	print('saving the whole dictionary...')
+	with open(conf.path_dict, 'wb') as handle:
+		pickle.dump(paths, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-# # load pickle
-# with open('paths.pickle', 'rb') as handle:
-# 	paths = pickle.load(handle)
-# 	#print paths
+	# # load pickle
+	# with open('paths.pickle', 'rb') as handle:
+	# 	paths = pickle.load(handle)
+
 

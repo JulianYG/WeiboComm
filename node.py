@@ -45,7 +45,7 @@ if __name__ == '__main__':
         sigs.append(avg_sig)
         t += 1
 
-        if avg_sig < conf.epsilon:
+        if avg_sig < conf.epsilon or t == conf.max_iter:
 
             logging.info('Writing results into {}...'.format(conf.node_result))
             with open(conf.node_result, 'wb') as f:

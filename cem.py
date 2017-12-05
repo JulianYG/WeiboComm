@@ -234,22 +234,23 @@ class EdgeStat(Stat):
 class Config:
     def __init__(self):
         
-        self.network_file = './data/network_graph_small_small.txt'
+        self.network_file = './data/network_graph.txt'
         self.retweet_file = './data/total.txt'
-        self.path_dict = './data/path.pkl'
-        self.edge_result = './data/edge_res_small_small.pkl'
-        self.node_result = './data/node_res_small_small.pkl'
+        self.path_dict = './data/path_full.pkl'
+        self.edge_result = './data/edge_res.pkl'
+        self.node_result = './data/node_res.pkl'
+        self.max_path_len = 100
 
-        self.node_log = './log/node.txt'
-        self.node_plot = './log/node.png'
-        self.edge_log = './log/edge.txt'
-        self.edge_plot = './log/edge.png'
+        self.node_log = './log/node_full.txt'
+        self.node_plot = './log/node_full.png'
+        self.edge_log = './log/edge_full.txt'
+        self.edge_plot = './log/edge_full.png'
     
         self.num_examples = 32
         self.num_top = 5
-        self.epsilon = 1e-4
+        self.epsilon = 1e-5
         self.sigma_ratio = 0.25
         self.mu = 0.
 
-        self.max_iter = 200
+        self.max_iter = 500
 
