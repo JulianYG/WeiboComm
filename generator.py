@@ -33,9 +33,8 @@ class gen_config:
 
 conf = gen_config()
 
-# followers_graph = snap.GenCopyModel(conf.num_nodes, conf.copy_model_beta, snap.TRnd())
-followers_graph = snap.GenBaraHierar(snap.PNGraph, conf.levels, True)
-
+followers_graph = snap.GenCopyModel(conf.num_nodes, conf.copy_model_beta, snap.TRnd())
+# followers_graph = snap.GenBaraHierar(snap.PNGraph, conf.levels, True)
 
 
 retweet_data = [] # list of ((path), (retweet_time))
@@ -46,7 +45,7 @@ time_range = int((conf.max_retweet_time - conf.min_retweet_time).total_seconds()
 
 while num_tweets > 1:
     generated = 0
-    print generated, num_tweets
+    # print generated, num_tweets
     while generated < num_tweets:
         path = [followers_graph.GetRndNId(Rnd)]
         while len(path) < target_len:
@@ -66,7 +65,7 @@ while num_tweets > 1:
             generated += 1
 
     # decay number of tweets to generate and increase path
-    num_tweets *= math.exp(-self.exp_decay_const)
+    num_tweets *= math.exp(-conf.exp_decay_const)
     target_len += 1
 
 
