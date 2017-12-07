@@ -13,11 +13,12 @@ def constructRetweetDict(retweet_file):
 	original_time = None
 	original_uid = None
 	retweet_num = None
+
 	with open(retweet_file) as f:
 		for line in f:
 			row_number += 1
-			if row_number%10000 == 0:
-				print row_number
+			if row_number % 10000 == 0:
+				print(row_number)
 			elements = line.split()
 			if row_number % 2 == 1:
 				original_time = parseTime(elements[1])
@@ -134,12 +135,12 @@ if __name__ == '__main__':
 
 	max_path_len = conf.max_path_len
 
+	print('loading following graph...')
+	Graph = snap.LoadEdgeList(snap.PNEANet, conf.network_file)
+
 	print('processing retweet file...')
 	retweet_info, retweet_people = constructRetweetDict(conf.retweet_file)
-
-	print('loading following graph...')
-	Graph = snap.LoadEdgeList(snap.PNGraph, conf.network_file)
-
+	
 	print('finding paths...')
 	findPaths(Graph, paths, retweet_info, retweet_people, max_path_len)
 

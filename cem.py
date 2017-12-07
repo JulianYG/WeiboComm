@@ -236,10 +236,10 @@ class Config:
         
         self.network_file = './data/network_graph.txt'
         self.retweet_file = './data/total.txt'
-        self.path_dict = './data/path_full.pkl'
+        self.path_dict = './data/path_10_25.pkl'
         self.edge_result = './data/edge_res.pkl'
         self.node_result = './data/node_res.pkl'
-        self.max_path_len = 100
+        self.max_path_len = 25
 
         self.node_log = './log/node_full.txt'
         self.node_plot = './log/node_full.png'
