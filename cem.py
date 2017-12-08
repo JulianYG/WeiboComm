@@ -29,7 +29,8 @@ class Stat(object):
 
     @staticmethod
     def update_stat(graph, stats_lst):
-        """ Given a list of NodeStats objects, 
+        """ 
+        Given a list of NodeStats objects, 
         return new dictionaries mapping from nid to new mu and sig values.
         """
         return NotImplemented
@@ -39,8 +40,14 @@ class Stat(object):
         return NotImplemented
 
     @staticmethod
-    def write_to_file(network, file):
-        pass
+    def get_prob_dict(network, sid):
+
+        prob_dict = collections.defaultdict(float)
+        for edge in network.Edges():
+            key = (edge.GetSrcNId(), edge.GetDstNId())
+            prob_dict[key] = network.GetFltAttrDatE(edge, 'prob_{}'.format(sid))
+
+        return prob_dict
 
     def update_network(self, mu, sigma):
         self.sample_probability(self._graph, self.sid, mu, sigma)
@@ -273,8 +280,8 @@ class Config:
         self.network_file = './data/network_graph_small_small.txt'
         self.retweet_file = './data/total.txt'
         self.path_dict = './data/path_1000.pkl'
-        self.edge_result = './data/edge_res.pkl'
-        self.node_result = './data/node_res.pkl'
+        self.edge_result = './data/edge_res_small_small.pkl'
+        self.node_result = './data/node_res_small_small.pkl'
         self.max_path_len = 25
 
         self.node_log = './log/node_full.txt'
@@ -282,7 +289,7 @@ class Config:
         self.edge_log = './log/edge_full.txt'
         self.edge_plot = './log/edge_full.png'
     
-        self.num_examples = 32
+        self.num_examples = 16
         self.num_top = 5
         self.epsilon = 3e-6
         self.sigma_ratio = 0.25
