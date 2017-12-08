@@ -22,8 +22,8 @@ def constructRetweetDict(retweet_file):
 			elements = line.split()
 			if row_number % 2 == 1:
 				original_time = parseTime(elements[1])
-				original_uid = int(elements[2])
-				retweet_num = int(elements[3])
+				original_uid = int(elements[0])
+				# retweet_num = int(elements[3])
 			else:
 				uid_time = {}
 				people = set([])
@@ -56,10 +56,13 @@ def dfs(curr, source, retweet_people_source, Graph, path, paths, visited, retwee
 	if curr in retweet_people_source:
 		if (source, curr) not in paths:
 			paths[(source, curr)] = []
+			if len(paths) % 100 == 0:
+				print "num of paths found: ", len(paths)
 		newpath = path+[curr]
 		missing, conflict, correct = pathStats(newpath, retweet_info)
 		# missing, conflict, correct = 0,0,0
 		paths[(source, curr)].append((newpath, missing, conflict, correct))
+		
 	 
 	if curr in visited:
 		return
@@ -136,9 +139,11 @@ if __name__ == '__main__':
 	max_path_len = conf.max_path_len
 
 	print('loading following graph...')
+	print conf.network_file
 	Graph = snap.LoadEdgeList(snap.PNEANet, conf.network_file)
 
 	print('processing retweet file...')
+	print conf.retweet_file
 	retweet_info, retweet_people = constructRetweetDict(conf.retweet_file)
 	
 	print('finding paths...')

@@ -3,6 +3,7 @@ import random
 import math
 import numpy as np
 from datetime import datetime, timedelta
+import pickle
 
 min_retweet_time = datetime.strptime("2016-01-01-00:00:00", "%Y-%m-%d-%H:%M:%S")
 max_retweet_time = datetime.strptime("2016-05-01-00:00:00", "%Y-%m-%d-%H:%M:%S")
@@ -55,8 +56,23 @@ def assign_time(path_len, min_retweet_time, max_retweet_time):
 
 
 def gen_retweet_set(graph, paths_len_num):
-    with open("./data/artificial_retweet.txt",'w') as save_file:
-        probs = assign_prob(graph)
+    with open("./data/artificial_retweet_1000.txt",'w+') as save_file:
+        ########assign new probilities
+        # probs = assign_prob(graph)
+        # print('saving the whole dictionary...')
+        # with open("./data/graph_probs_small_small.pickle", 'wb') as handle:
+        #     pickle.dump(probs, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        ########end assign new probilities
+
+        ########load previous probilities
+        # load pickle
+        print('loading probilities...')
+        with open('./data/graph_probs_small_small.pickle', 'rb') as handle:
+          probs = pickle.load(handle)
+          #print paths
+        ########end load probilities
+
+        print('generating paths..')
         for target_len, num_paths in paths_len_num:
             print target_len, num_paths
             while num_paths > 0:
@@ -89,10 +105,10 @@ if __name__ == '__main__':
     # graph.AddEdge(1,3)
     # graph.AddEdge(2,3)
     # graph.AddEdge(4,3)
-    lamb = 1.2
+    lamb = 0.8
     len_num = []
-    for i in range(2, 10):
-        num = 100000*lamb*math.exp(-lamb*(i+(np.random.normal(0,0.1))))
+    for i in range(2, 25):
+        num = 1000*lamb*math.exp(-lamb*(i+(np.random.normal(0,0.3))))
         len_num.append((i, int(num)))
     print len_num
 
@@ -126,4 +142,7 @@ if __name__ == '__main__':
     
 
     # gen_retwweet(graph, )
-    
+
+    #[(2, 1039), (3, 325), (4, 88), (5, 30), (6, 10), (7, 2), (8, 0), (9, 0)]
+    # [(2, 12949), (3, 4030), (4, 846), (5, 287), (6, 94), (7, 25), (8, 8), (9, 2)]
+    # [(2, 109258), (3, 36282), (4, 9817), (5, 2391), (6, 1018), (7, 251), (8, 100), (9, 23)]
