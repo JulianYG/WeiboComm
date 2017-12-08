@@ -1,5 +1,7 @@
 import snap
 import random
+import math
+import numpy as np
 from datetime import datetime, timedelta
 
 min_retweet_time = datetime.strptime("2016-01-01-00:00:00", "%Y-%m-%d-%H:%M:%S")
@@ -53,15 +55,18 @@ def assign_time(path_len, min_retweet_time, max_retweet_time):
 
 
 def gen_retweet_set(graph, paths_len_num):
-    with open("../data/data/artificial_retweet.txt",'w') as save_file:
+    with open("./data/artificial_retweet.txt",'w') as save_file:
         probs = assign_prob(graph)
         for target_len, num_paths in paths_len_num:
+            print target_len, num_paths
             while num_paths > 0:
                 start_node = graph.GetRndNId()
                 path = [start_node]
                 gen_path(graph, probs, path, target_len)
                 if len(path) == target_len:
                     num_paths -= 1
+                    if num_paths%100 == 0:
+                        print num_paths
                     retweet_time = assign_time(target_len, min_retweet_time, max_retweet_time)
                     save_file.write(str(start_node) + ' ' + str(retweet_time[0]) + '\n')
                     retweet_line = ""
@@ -71,24 +76,27 @@ def gen_retweet_set(graph, paths_len_num):
     
 
 if __name__ == '__main__':
-    # following_file = "../data/data/network_graph_small.txt"
-    # graph = snap.LoadEdgeList(snap.PNGraph, following_file)
+    following_file = "./data/network_graph_small_small.txt"
+    graph = snap.LoadEdgeList(snap.PNGraph, following_file)
 
+    print graph.GetNodes()
+    print graph.GetEdges()
+    # graph = snap.PNGraph.New()
+    # for i in range(4):
+    #   graph.AddNode(i+1)
+    # graph.AddEdge(1,4)
+    # graph.AddEdge(1,2)
+    # graph.AddEdge(1,3)
+    # graph.AddEdge(2,3)
+    # graph.AddEdge(4,3)
+    lamb = 1.2
+    len_num = []
+    for i in range(2, 10):
+        num = 100000*lamb*math.exp(-lamb*(i+(np.random.normal(0,0.1))))
+        len_num.append((i, int(num)))
+    print len_num
 
-
-
-
-
-    graph = snap.PNGraph.New()
-    for i in range(4):
-      graph.AddNode(i+1)
-    graph.AddEdge(1,4)
-    graph.AddEdge(1,2)
-    graph.AddEdge(1,3)
-    graph.AddEdge(2,3)
-    graph.AddEdge(4,3)
-
-    gen_retweet_set(graph, [(2,5),(3,2)])
+    gen_retweet_set(graph, len_num)
    
 
     # probs =  assign_prob(graph)
