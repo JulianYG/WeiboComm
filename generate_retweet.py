@@ -22,6 +22,7 @@ def assign_prob(graph):
             probs[(u,v)] = p[idx]
     return probs
 
+
 def gen_path(graph, probs, path, target_len):
     if len(path) == target_len:
         return

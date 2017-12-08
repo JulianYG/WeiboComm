@@ -58,12 +58,12 @@ if __name__ == '__main__':
     print('Entropy, energy of probability difference vectors: {}, {}'.format(
         sp.entropy(diff), np.linalg.norm(diff)))
 
-
-
     ############ Run algo on generated graph, and compare probs with ground truth
     print('loading probilities...')
-    with open('./data/graph_probs_small_small.pickle', 'rb') as handle:
-        probs = pickle.load(handle)
+
+    with open(conf.ground_truth, 'rb') as f:
+        probs = pickle.load(f)
+
     keys = node_edge_prob.keys()
     val_true = [probs[k] for k in keys]
     val_pred_node = [node_edge_prob[k] for k in keys]
@@ -73,8 +73,11 @@ if __name__ == '__main__':
     val_pred_node = np.array(val_pred_node)
     val_pred_edge = np.array(val_pred_edge)
 
-    print "l2 distance(node vs true): ", np.mean((val_pred_node - val_true)**2)
-    print "l2 distance(edge vs true): ", np.mean((val_pred_edge - val_true)**2)
+    print "l2 rand distance(node vs true): ", np.sqrt(np.sum((np.random.uniform(size=104772) - val_true)**2))
+    print "l2 rand distance(edge vs true): ", np.sqrt(np.sum((np.random.uniform(size=104772) - val_true)**2))
+
+    print "l2 distance(node vs true): ", np.sqrt(np.sum(((1. - val_pred_node) - val_true)**2))
+    print "l2 distance(edge vs true): ", np.sqrt(np.sum(((1. - val_pred_edge) - val_true)**2))
 
     
     # TODO: plot prob difference distribution by node degrees
