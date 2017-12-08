@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     # load config
     conf = Config()    
-    sina_network = snap.LoadEdgeList(snap.PNEANet, conf.network_file)
+    sina_network = snap.LoadEdgeList(snap.PNGraph, conf.network_file)
 
     with open(conf.edge_result, 'rb') as f:
         edge_dist = pickle.load(f)
@@ -23,14 +23,11 @@ if __name__ == '__main__':
     print('Sampling probabilities...')
 
     # Can use empty dict for sigma here, if choose deterministic
-    NodeStat.sample_probability(
-        sina_network, 0, node_dist['mu'], node_dist['sigma'])
+    _, node_edge_prob = NodeStat.sample_probability(
+        sina_network, node_dist['mu'], node_dist['sigma'])
 
-    EdgeStat.sample_probability(
-        sina_network, 1, edge_dist['mu'], edge_dist['sigma'])
-
-    node_edge_prob = NodeStat.get_prob_dict(sina_network, 0)
-    edge_edge_prob = EdgeStat.get_prob_dict(sina_network, 1)
+    _, edge_edge_prob = EdgeStat.sample_probability(
+        sina_network, edge_dist['mu'], edge_dist['sigma'])
 
     print('Size of node prob dict: {}, edge prob dict: {}'.format(
         len(node_edge_prob), len(edge_edge_prob)
@@ -81,6 +78,9 @@ if __name__ == '__main__':
 
     
     # TODO: plot prob difference distribution by node degrees
+    degree_avgProb = {}
+    
+
 
 
 
