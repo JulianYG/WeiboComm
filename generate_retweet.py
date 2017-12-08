@@ -11,14 +11,16 @@ max_retweet_time = datetime.strptime("2016-05-01-00:00:00", "%Y-%m-%d-%H:%M:%S")
 
 def assign_prob(graph):
     probs = {}
-    for node_u in graph.Nodes():
-        out_d = node_u.GetOutDeg()
-        r = [random.uniform(0,1) for i in range(out_d)]
-        sum_ = sum(r)
-        p = [i/sum_ for i in r]
-        u = node_u.GetId()
-        for idx in range(node_u.GetOutDeg()):
-            v = node_u.GetOutNId(idx)
+    for node_v in graph.Nodes():
+        in_d = node_v.GetInDeg()
+        r = np.random.uniform(size = in_d)
+        p = r/r.sum()
+        # r = [random.uniform(0,1) for i in range(out_d)]
+        # sum_ = sum(r)
+        # p = [i/sum_ for i in r]
+        v = node_v.GetId()
+        for idx in range(node_v.GetInDeg()):
+            u = node_v.GetInNId(idx)
             probs[(u,v)] = p[idx]
     return probs
 
@@ -56,19 +58,19 @@ def assign_time(path_len, min_retweet_time, max_retweet_time):
 
 
 def gen_retweet_set(graph, paths_len_num):
-    with open("./data/artificial_retweet_1000.txt",'w+') as save_file:
+    with open("./data/artificial_retweet_1000_in.txt",'w+') as save_file:
         ########assign new probilities
-        # probs = assign_prob(graph)
-        # print('saving the whole dictionary...')
-        # with open("./data/graph_probs_small_small.pickle", 'wb') as handle:
-        #     pickle.dump(probs, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        probs = assign_prob(graph)
+        print('saving the whole dictionary...')
+        with open("./data/graph_probs_small_small_in.pickle", 'wb') as handle:
+            pickle.dump(probs, handle, protocol=pickle.HIGHEST_PROTOCOL)
         ########end assign new probilities
 
         ########load previous probilities
         # load pickle
-        print('loading probilities...')
-        with open('./data/graph_probs_small_small.pickle', 'rb') as handle:
-          probs = pickle.load(handle)
+        # print('loading probilities...')
+        # with open('./data/graph_probs_small_small.pickle', 'rb') as handle:
+        #   probs = pickle.load(handle)
           #print paths
         ########end load probilities
 
