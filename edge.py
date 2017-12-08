@@ -16,12 +16,17 @@ if __name__ == '__main__':
 
     # load config
     conf, sigs = Config(), []
-    sina_network = snap.LoadEdgeList(snap.PNGraph, conf.network_file)
+    logging.info('Loading network...')
+    sina_network = snap.LoadEdgeList(snap.PNEANet, conf.network_file)
 
     # TODO: get path_dict from qiwen's code
+    logging.info('Loading path file...')
+
     with open(conf.path_dict, 'rb') as f:
         path_dict = pickle.load(f)
-    stats = [EdgeStat(sina_network, conf.mu, conf.sigma_ratio) for _ in range(conf.num_examples)]
+
+    logging.info('Initializing NodeStats...')
+    stats = [EdgeStat(i, sina_network, conf.mu, conf.sigma_ratio) for i in range(conf.num_examples)]
 
     logger = open(conf.edge_log, 'w')
     t, avg_sig = 0, 1e3
@@ -34,7 +39,7 @@ if __name__ == '__main__':
         top_scores = sorted(scores, reverse=True, key=lambda x: x[0])[:conf.num_top]
         top_m = [i for (s, i) in top_scores]
         logging.info('Top scores: {}'.format(top_scores))
-        new_MU, new_SIG = EdgeStat.update_stat([stats[i].X for i in top_m])
+        new_MU, new_SIG = EdgeStat.update_stat(sina_network, [stats[i] for i in top_m])
 
         # pdate_mu/sigma by refitting mu, sigma on top_m
         for i in range(conf.num_examples):
