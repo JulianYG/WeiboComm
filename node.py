@@ -15,11 +15,15 @@ if __name__ == '__main__':
 
     # load config
     conf, sigs = Config(), []
+    logging.info('Loading network...')
     sina_network = snap.LoadEdgeList(snap.PNEANet, conf.network_file)
 
     # TODO: get path_dict from qiwen's code
+    logging.info('Loading path file...')
     with open(conf.path_dict, 'rb') as f:
         path_dict = pickle.load(f)
+
+    logging.info('Initializing NodeStats...')
     stats = [NodeStat(i, sina_network, conf.mu, conf.sigma_ratio) for i in range(conf.num_examples)]
 
     t, avg_sig = 0, 1e3

@@ -19,6 +19,7 @@ class Stat(object):
         self.prob = 'prob_{}'.format(sid)
         self.sid = sid
         self._initialize(initial_mu, sigma_ratio)
+        print('Initialization {} finished.'.format(sid))
 
     def _initalize(self, mu, sigma):
         return NotImplemented
@@ -27,7 +28,7 @@ class Stat(object):
         return NotImplemented
 
     @staticmethod
-    def update_stat(stats_lst):
+    def update_stat(graph, stats_lst):
         """ Given a list of NodeStats objects, 
         return new dictionaries mapping from nid to new mu and sig values.
         """
@@ -109,7 +110,7 @@ class NodeStat(Stat):
             nid, deg = item.GetVal1(), float(item.GetVal2())
 
             init_pop_mu = deg / max_out_deg + mu
-            init_pop_sig = 1e-3 + deg / max_out_deg * sigma_ratio
+            init_pop_sig = deg / max_out_deg * sigma_ratio
 
             # Initialized according to scaled number of followers
             init_pop = np.random.normal(init_pop_mu, init_pop_sig)
@@ -127,7 +128,7 @@ class NodeStat(Stat):
         mu, sigma = collections.defaultdict(float), collections.defaultdict(float)
         for node in graph.Nodes():
             nid = node.GetId()
-            pops = [stat_lst[i].get_attr(nid, 'pop_{}'.format(i)) for i in range(len(stat_lst))]
+            pops = [s.get_attr(nid, 'pop_{}'.format(s.sid)) for s in stat_lst]
 
             # Assign new gaussian params by data values
             mu[nid] = np.mean(pops)
@@ -178,9 +179,9 @@ class NodeStat(Stat):
 
 class EdgeStat(Stat):
 
-    def __init__(self, network_g, initial_mu, sigma_ratio):
+    def __init__(self, sid, network_g, initial_mu, sigma_ratio):
 
-        super(EdgeStat, self).__init__(network_g, initial_mu, sigma_ratio)
+        super(EdgeStat, self).__init__(sid, network_g, initial_mu, sigma_ratio)
 
     def _initialize(self, mu, sigma_ratio):
 
@@ -206,8 +207,8 @@ class EdgeStat(Stat):
             p /= p.sum()
 
             for i in range(deg):
-                edge = network.GetEI(node.GetInNId(i), node.GetId())
-                self._graph.AddFltAttrDatE(edge, p[i], 'prob')
+                edge = self._graph.GetEI(node.GetInNId(i), node.GetId())
+                self._graph.AddFltAttrDatE(edge, p[i], self.prob)
 
     def get_attr(self, eid, attr):
         return self._graph.GetFltAttrDatE(eid, attr)
@@ -220,7 +221,7 @@ class EdgeStat(Stat):
         for edge in graph.Edges():
 
             edge_tup = (edge.GetSrcNId(), edge.GetDstNId())
-            probs = [stat.get_attr(edge, 'prob') for stat in stat_lst]
+            probs = [s.get_attr(edge, 'prob_{}'.format(s.sid)) for s in stat_lst]
 
             # Assign new gaussian params by data values
             mu[edge_tup] = np.mean(probs)
@@ -229,7 +230,7 @@ class EdgeStat(Stat):
         return mu, sigma
 
     @staticmethod
-    def sample_probability(network, mu, sigma):
+    def sample_probability(network, sid, mu, sigma):
         """
         To sample probability for edges, same procedure as update_network
         """
@@ -248,12 +249,8 @@ class EdgeStat(Stat):
             # Re-sample from new mu and sigma, and normalize
             new_p = np.clip(
                 np.random.normal(
-                    [network.GetFltAttrDatE(
-                        network.GetEI(node.GetInNId(i), nid), 
-                        'mu') for i in range(deg)],
-                    [network.GetFltAttrDatE(
-                        network.GetEI(node.GetInNId(i), nid), 
-                        'sigma') for i in range(deg)]
+                    [mu[(node.GetInNId(i), nid)] for i in range(deg)],
+                    [sigma[(node.GetInNId(i), nid)] for i in range(deg)]
                 ), 0., 1.)
 
             if new_p.sum() == 0:
@@ -264,7 +261,7 @@ class EdgeStat(Stat):
             # Prob normalized version of edges
             for i in range(deg):
                 edge = network.GetEI(node.GetInNId(i), nid)
-                network.AddFltAttrDatE(edge, new_p[i], 'prob')
+                network.AddFltAttrDatE(edge, new_p[i], 'prob_{}'.format(sid))
 
             visited.add(nid)
 
@@ -275,7 +272,7 @@ class Config:
         
         self.network_file = './data/network_graph_small_small.txt'
         self.retweet_file = './data/total.txt'
-        self.path_dict = './data/path.pkl'
+        self.path_dict = './data/path_1000.pkl'
         self.edge_result = './data/edge_res.pkl'
         self.node_result = './data/node_res.pkl'
         self.max_path_len = 25
