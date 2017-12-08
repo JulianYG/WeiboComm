@@ -280,8 +280,8 @@ class Config:
         self.network_file = './data/network_graph_small_small.txt'
         self.retweet_file = './data/artificial_retweet_1000_in.txt'
         self.path_dict = './data/path_1000.pkl'
-        self.edge_result = './data/edge_res_small_small_in.pkl'
-        self.node_result = './data/node_res_small_small_in.pkl'
+        self.edge_result = './data/edge_res_small_small.pkl'
+        self.node_result = './data/node_res_small_small.pkl'
         self.ground_truth = './data/prob_ground_truth.pkl'
         self.max_path_len = 25
 
