@@ -13,22 +13,17 @@ np.random.seed(42)
 
 class Stat(object):
 
-    def __init__(self, network_g, initial_mu, sigma_ratio):
+    def __init__(self, sid, network_g, initial_mu, sigma_ratio):
 
         self._graph = network_g
-
-        # The probability dictionary
-        self.X = collections.defaultdict(float)
-
-        # The popularity dictionary
-        self.P = collections.defaultdict(float)
+        self.prob = 'prob_{}'.format(sid)
+        self.sid = sid
         self._initialize(initial_mu, sigma_ratio)
 
     def _initalize(self, mu, sigma):
         return NotImplemented
 
-    @staticmethod
-    def sample_probability(network, mu, sigma):
+    def get_attr(self, element_id, attr):
         return NotImplemented
 
     @staticmethod
@@ -36,26 +31,25 @@ class Stat(object):
         """ Given a list of NodeStats objects, 
         return new dictionaries mapping from nid to new mu and sig values.
         """
-        mu, sigma = collections.defaultdict(float), collections.defaultdict(float)
-        samples = collections.defaultdict(list)
-        for stat in stats_lst:
-            for k in stat:
-                samples[k].append(stat[k])
+        return NotImplemented
 
-        for k in stats_lst[0]:
-            mu[k] = np.mean(samples[k])
-            sigma[k] = np.std(samples[k])
-        return mu, sigma
+    @staticmethod
+    def sample_probability(network, sid, mu, sigma):
+        return NotImplemented
+
+    @staticmethod
+    def write_to_file(network, file):
+        pass
 
     def update_network(self, mu, sigma):
-        self.P, self.X = self.sample_probability(self._graph, mu, sigma)
+        self.sample_probability(self._graph, self.sid, mu, sigma)
 
     def evaluate_assignment(self, path_dict, 
         missing_score=0, 
         conflict_score=-1, 
         correct_score=1):
         """ 
-        For each assignment of edge probabilities (self.X), assign a score to how well
+        For each assignment of edge probabilities, assign a score to how well
         this assignments is according to some criterion we learnt from retweet graph. All these
         heuristics learnt from retweet graph is stored in path_dict
 
@@ -74,9 +68,12 @@ class Stat(object):
             for path, ms, cns, crs in v:
                 normalized_weight = 1.
                 for i in range(len(path) - 1):
+
+                    edge = self._graph.GetEI(path[i], path[i + 1])
+
                     # Scale by the in degree of the node to normalize
-                    normalized_weight *= self.X[(path[i], 
-                        path[i + 1])] * self._graph.GetNI(path[i + 1]).GetInDeg()
+                    normalized_weight *= self._graph.GetFltAttrDatE(edge, self.prob)\
+                        * self._graph.GetNI(path[i + 1]).GetInDeg()
              
                 score = normalized_weight * \
                     (missing_score * ms + conflict_score * cns + correct_score * crs)
@@ -91,11 +88,12 @@ class NodeStat(Stat):
     """ 
     Represent one set of retweet probabilities for every node
     """
-    def __init__(self, network_g, initial_mu, sigma_ratio):
+    def __init__(self, sid, network_g, initial_mu, sigma_ratio):
 
         # represents the popularity of each node
-        super(NodeStat, self).__init__(network_g, initial_mu, sigma_ratio)
-
+        self.pop = 'pop_{}'.format(sid)
+        super(NodeStat, self).__init__(sid, network_g, initial_mu, sigma_ratio)
+        
     def _initialize(self, mu, sigma_ratio):
         """
         NodeStat uses out links to initalize popularity, 
@@ -109,53 +107,73 @@ class NodeStat(Stat):
 
         for item in outdeg:
             nid, deg = item.GetVal1(), float(item.GetVal2())
-            
-            # Initialized according to scaled number of followers
-            self.P[nid] = np.random.normal(
-                deg / max_out_deg + mu, deg / max_out_deg * sigma_ratio)
 
-        self.X = NodeStat._compute_prob(self._graph, self.P)
+            init_pop_mu = deg / max_out_deg + mu
+            init_pop_sig = 1e-3 + deg / max_out_deg * sigma_ratio
+
+            # Initialized according to scaled number of followers
+            init_pop = np.random.normal(init_pop_mu, init_pop_sig)
+            self._graph.AddFltAttrDatN(
+                nid, init_pop, self.pop)
+
+        NodeStat._compute_prob(self._graph, self.sid)
+
+    def get_attr(self, nid, attr):
+        return self._graph.GetFltAttrDatN(nid, attr)
 
     @staticmethod
-    def _compute_prob(network, P):
+    def update_stat(graph, stat_lst):
+
+        mu, sigma = collections.defaultdict(float), collections.defaultdict(float)
+        for node in graph.Nodes():
+            nid = node.GetId()
+            pops = [stat_lst[i].get_attr(nid, 'pop_{}'.format(i)) for i in range(len(stat_lst))]
+
+            # Assign new gaussian params by data values
+            mu[nid] = np.mean(pops)
+            sigma[nid] = np.std(pops)
+
+        return mu, sigma
+
+    @staticmethod
+    def _compute_prob(network, sid):
 
         # Next sample probabilities of edges using preference indicators
         # For NodeStat, X represents likelihood of retweeting other users;
         # need to calculate probabilities again with edges
-        prob_dict = collections.defaultdict(float)
+        for node in network.Nodes():
 
-        for nid in P:
-            deg = network.GetNI(nid).GetInDeg()
+            deg = node.GetInDeg()
             if deg == 0:
                 continue
-            node = network.GetNI(nid)
 
-            prob = np.clip([P[node.GetInNId(i)] for i in range(deg)],
-                0., None)
+            prob = np.array(
+                [network.GetFltAttrDatN(node.GetInNId(i), 
+                    'pop_{}'.format(sid)) for i in range(deg)], dtype=np.float32)
 
             # Handle corner cases
-            if prob.sum() == 0:
+            if prob.sum() == 0 or len(prob) == 1:
                 prob = np.ones(deg, dtype=np.float32)
-           
+            else:
+                prob = (prob - prob.min()) / (prob.max() - prob.min())
             prob /= prob.sum()
-
-            # Note here the order is out link
+        
+            # Note here the order is src->dest
             for i in range(deg):
-                neighbor = node.GetInNId(i)
-                prob_dict[(neighbor, nid)] = prob[i]
-
-        return prob_dict
+                edge = network.GetEI(node.GetInNId(i), node.GetId())
+                network.AddFltAttrDatE(edge, prob[i], 'prob_{}'.format(sid))
 
     @staticmethod
-    def sample_probability(network, mu, sigma):
+    def sample_probability(network, sid, mu, sigma):
 
         # First generate popularity indicator for each node
-        popularity_dict = collections.defaultdict(float)
         for nid in mu:
-            popularity_dict[nid] = np.random.normal(mu[nid], sigma[nid])
+            network.AddFltAttrDatN(
+                network.GetNI(nid), 
+                np.random.normal(mu[nid], sigma[nid]), 'pop_{}'.format(sid))
 
         # Next compute probabilities
-        return popularity_dict, NodeStat._compute_prob(network, popularity_dict)
+        NodeStat._compute_prob(network, sid)
 
 
 class EdgeStat(Stat):
@@ -188,33 +206,54 @@ class EdgeStat(Stat):
             p /= p.sum()
 
             for i in range(deg):
-                neighbor = node.GetInNId(i)
-                self.X[(neighbor, nid)] = p[i]
+                edge = network.GetEI(node.GetInNId(i), node.GetId())
+                self._graph.AddFltAttrDatE(edge, p[i], 'prob')
+
+    def get_attr(self, eid, attr):
+        return self._graph.GetFltAttrDatE(eid, attr)
+
+    @staticmethod
+    def update_stat(graph, stat_lst):
+
+        mu, sigma = collections.defaultdict(float), collections.defaultdict(float)
+
+        for edge in graph.Edges():
+
+            edge_tup = (edge.GetSrcNId(), edge.GetDstNId())
+            probs = [stat.get_attr(edge, 'prob') for stat in stat_lst]
+
+            # Assign new gaussian params by data values
+            mu[edge_tup] = np.mean(probs)
+            sigma[edge_tup] = np.std(probs)
+            
+        return mu, sigma
 
     @staticmethod
     def sample_probability(network, mu, sigma):
         """
         To sample probability for edges, same procedure as update_network
         """
-        prob_dict = collections.defaultdict(float)
 
         # Note each nid and all it's followees should only be updated once
         # during each sampling, need to be very careful!
         visited = set()
 
         for _, nid in mu:
+            node = network.GetNI(nid)
 
-            deg = network.GetNI(nid).GetInDeg()
+            deg = node.GetInDeg()
             if deg == 0 or nid in visited:
                 continue
-
-            node = network.GetNI(nid)
 
             # Re-sample from new mu and sigma, and normalize
             new_p = np.clip(
                 np.random.normal(
-                    [mu[(node.GetInNId(i), nid)] for i in range(deg)],
-                    [sigma[(node.GetInNId(i), nid)] for i in range(deg)]
+                    [network.GetFltAttrDatE(
+                        network.GetEI(node.GetInNId(i), nid), 
+                        'mu') for i in range(deg)],
+                    [network.GetFltAttrDatE(
+                        network.GetEI(node.GetInNId(i), nid), 
+                        'sigma') for i in range(deg)]
                 ), 0., 1.)
 
             if new_p.sum() == 0:
@@ -224,19 +263,19 @@ class EdgeStat(Stat):
 
             # Prob normalized version of edges
             for i in range(deg):
-                neighbor = node.GetInNId(i)
-                prob_dict[(neighbor, nid)] = new_p[i]
-            visited.add(nid)
+                edge = network.GetEI(node.GetInNId(i), nid)
+                network.AddFltAttrDatE(edge, new_p[i], 'prob')
 
-        return {}, prob_dict
+            visited.add(nid)
 
 
 class Config:
+
     def __init__(self):
         
-        self.network_file = './data/network_graph.txt'
+        self.network_file = './data/network_graph_small_small.txt'
         self.retweet_file = './data/total.txt'
-        self.path_dict = './data/path_10_25.pkl'
+        self.path_dict = './data/path.pkl'
         self.edge_result = './data/edge_res.pkl'
         self.node_result = './data/node_res.pkl'
         self.max_path_len = 25
@@ -248,7 +287,7 @@ class Config:
     
         self.num_examples = 32
         self.num_top = 5
-        self.epsilon = 1e-5
+        self.epsilon = 3e-6
         self.sigma_ratio = 0.25
         self.mu = 0.
 
