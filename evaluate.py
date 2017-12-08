@@ -1,4 +1,5 @@
 
+from __future__ import print_function
 from cem import NodeStat, EdgeStat, Config
 
 import snap
@@ -64,20 +65,15 @@ if __name__ == '__main__':
     with open(conf.ground_truth, 'rb') as f:
         probs = pickle.load(f)
 
-    keys = node_edge_prob.keys()
-    val_true = [probs[k] for k in keys]
-    val_pred_node = [node_edge_prob[k] for k in keys]
-    val_pred_edge = [edge_edge_prob[k] for k in keys]
+    val_true = np.array([probs[k] for k in node_edge_prob])
+    val_pred_node = np.array([node_edge_prob[k] for k in node_edge_prob])
+    val_pred_edge = np.array([edge_edge_prob[k] for k in node_edge_prob])
 
-    val_true = np.array(val_true)
-    val_pred_node = np.array(val_pred_node)
-    val_pred_edge = np.array(val_pred_edge)
+    print("l2 rand distance (node vs true): ", 
+        np.linalg.norm((np.random.uniform(size=len(node_edge_prob)) - val_true)**2))
+    print("l2 distance (node vs true): ", np.linalg.norm(val_pred_node - val_true))
+    print("l2 distance (edge vs true): ", np.linalg.norm(val_pred_edge - val_true))
 
-    print "l2 rand distance (node vs true): ", np.sqrt(np.sum((np.random.uniform(size=len(node_edge_prob)) - val_true)**2))
-    print "l2 distance (node vs true): ", np.sqrt(np.sum(( val_pred_node - val_true)**2))
-    print "l2 distance (edge vs true): ", np.sqrt(np.sum(( val_pred_edge - val_true)**2))
-
-    
     # TODO: plot prob difference distribution by node degrees
     degree_avgProb = {}
     
