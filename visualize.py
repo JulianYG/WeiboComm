@@ -2,6 +2,8 @@ import snap
 import collections
 from graphviz import Digraph
 import random
+from colorsys import hsv_to_rgb
+import pickle
 
 # counter = collections.Counter()
 # with open('network_graph_small_small.txt', 'r') as f:
@@ -12,9 +14,23 @@ import random
 
 # selected_nodes = set([x[0] for x in counter.most_common(100)])
 
+	
+
+def getColor(val, minval, maxval):
+    """ Convert val in range minval..maxval to the range 0..120 degrees which
+        correspond to the colors Red and Green in the HSV colorspace.
+    """
+    h = (float(val-minval) / (maxval-minval)) * 120
+
+    return str(h/360)+'  1.000 1.000'
+
+    # r, g, b = hsv_to_rgb(h/360, 1., 1.)
+    # return r, g, b
+
+
 g_snap = snap.TNGraph.New() 
 
-with open('network_graph_small_small.txt', 'r') as f:
+with open('../data/network_graph_small_small.txt', 'r') as f:
 	lines = f.readlines()[3:]
  	for l in lines:
  		src, dest = l.split()
@@ -25,6 +41,7 @@ with open('network_graph_small_small.txt', 'r') as f:
 			g_snap.AddNode(dest)
 		g_snap.AddEdge(src, dest)
 
+edge_probs = pickle.load(open('../data/graph_probs_small_small.pickle','rb'))
 
 # Components = snap.TCnComV()
 # snap.GetSccs(g_snap, Components)
@@ -39,6 +56,7 @@ with open('network_graph_small_small.txt', 'r') as f:
 max_nid = snap.GetMxDegNId(g_snap)
 BfsTree = snap.GetBfsTree(g_snap, max_nid, True, False)
 selected_nodes = set()
+selected_edges = collections.defaultdict(list)
 counter = collections.Counter()
 for EI in BfsTree.Edges():
 	src, dest = EI.GetSrcNId(), EI.GetDstNId()
@@ -50,7 +68,6 @@ for EI in BfsTree.Edges():
 	if len(selected_nodes) >= 100:
 		break
 
-print len(selected_nodes)
 g = Digraph('G', filename='test.gv')
 g.graph_attr.update(ranksep = "1.2 equally")
 
@@ -61,6 +78,12 @@ for n in selected_nodes:
 for l in lines:
 	src, dest = l.split()
 	if int(src) in selected_nodes and int(dest) in selected_nodes:
-		g.edge(src, dest)
+		selected_edges[src].append(dest)
+
+for src, v in selected_edges.items():
+	prob_total = sum([edge_probs[(src, dest)] for dest in v])
+	for dest in v:
+		g.edge(src, dest, color=getColor(edge_probs[(src, dest)]/prob_total, 0,1))
+
 
 g.view()
