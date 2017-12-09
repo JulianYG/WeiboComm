@@ -1,9 +1,11 @@
+from __future__ import print_function
 import snap
 import collections
 from graphviz import Digraph
 import random
 from colorsys import hsv_to_rgb
 import pickle
+from cem import NodeStat, EdgeStat, Config
 
 # counter = collections.Counter()
 # with open('network_graph_small_small.txt', 'r') as f:
@@ -30,7 +32,7 @@ def getColor(val, minval, maxval):
 
 g_snap = snap.TNGraph.New() 
 
-with open('../data/network_graph_small_small.txt', 'r') as f:
+with open('./data/network_graph_small_small.txt', 'r') as f:
 	lines = f.readlines()[3:]
  	for l in lines:
  		src, dest = l.split()
@@ -41,7 +43,18 @@ with open('../data/network_graph_small_small.txt', 'r') as f:
 			g_snap.AddNode(dest)
 		g_snap.AddEdge(src, dest)
 
-edge_probs = pickle.load(open('../data/graph_probs_small_small.pickle','rb'))
+conf = Config() 
+sina_network = snap.LoadEdgeList(snap.PNEANet, conf.network_file)
+edge_probs = pickle.load(open('./data/graph_probs_small_small.pickle','rb'))
+
+edge_dist = pickle.load(open('./data/edge_res_small_small.pickle','rb'))
+# print(edge_dist['sigma'])
+EdgeStat.sample_probability(
+        sina_network, 0, edge_dist['mu'], edge_dist['sigma'])
+res_probs = EdgeStat.get_prob_dict(sina_network, 0) 
+
+
+
 
 # Components = snap.TCnComV()
 # snap.GetSccs(g_snap, Components)
@@ -57,6 +70,7 @@ max_nid = snap.GetMxDegNId(g_snap)
 BfsTree = snap.GetBfsTree(g_snap, max_nid, True, False)
 selected_nodes = set()
 selected_edges = collections.defaultdict(list)
+selected_edges_res = collections.defaultdict(list)
 counter = collections.Counter()
 for EI in BfsTree.Edges():
 	src, dest = EI.GetSrcNId(), EI.GetDstNId()
@@ -68,22 +82,48 @@ for EI in BfsTree.Edges():
 	if len(selected_nodes) >= 100:
 		break
 
-g = Digraph('G', filename='test.gv')
-g.graph_attr.update(ranksep = "1.2 equally")
-
-g.attr('node', shape='circle', fixedsize='true', width = '.3')
-for n in selected_nodes:
-	g.node(str(n), label='')
 
 for l in lines:
 	src, dest = l.split()
 	if int(src) in selected_nodes and int(dest) in selected_nodes:
-		selected_edges[src].append(dest)
+		selected_edges[src].append([dest, edge_probs[(int(src), int(dest))], 
+			res_probs[(int(src), int(dest))]])
+
+min_v, max_v = float('inf'), float('-inf')
+min_v_res, max_v_res = float('inf'), float('-inf')
+for src, v in selected_edges.items():
+	prob_total = sum([p for _, p, _ in v])
+	res_prob_total = sum([p for _, _, p in v])
+	n = len(v)
+	for i in range(len(v)):
+		selected_edges[src][i][1] /= (prob_total/n)
+		selected_edges[src][i][2] /= (res_prob_total/n)
+		min_v = min(min_v, selected_edges[src][i][1])
+		max_v = max(max_v, selected_edges[src][i][1])
+		min_v_res = min(min_v_res, selected_edges[src][i][2])
+		max_v_res = max(max_v_res, selected_edges[src][i][2])
+
+
+g1 = Digraph('G', engine='fdp')
+g1.graph_attr.update(ranksep = "1.2 equally")
+
+g2 = Digraph('G', engine='fdp')
+g2.graph_attr.update(ranksep = "1.2 equally")
+
+g1.attr('node', shape='circle', fixedsize='true', width = '.3')
+for n in selected_nodes:
+	g1.node(str(n), label='')
+g2.attr('node', shape='circle', fixedsize='true', width = '.3')
+for n in selected_nodes:
+	g2.node(str(n), label='')
 
 for src, v in selected_edges.items():
-	prob_total = sum([edge_probs[(src, dest)] for dest in v])
-	for dest in v:
-		g.edge(src, dest, color=getColor(edge_probs[(src, dest)]/prob_total, 0,1))
+	for dest, p, _ in v:		
+		g1.edge(src, dest, color=getColor(p, min_v,max_v))
 
+for src, v in selected_edges.items():
+	for dest, _, p in v:		
+		g1.edge(src, dest, color=getColor(p, min_v_res,max_v_res))
 
-g.view()
+g1.render(filename='img/truth.gv')
+g2.render(filename='img/res.gv')
