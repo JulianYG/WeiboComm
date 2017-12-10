@@ -1,4 +1,3 @@
-from __future__ import print_function
 import snap
 import collections
 from graphviz import Digraph
@@ -45,13 +44,13 @@ with open('./data/network_graph_small_small.txt', 'r') as f:
 
 conf = Config() 
 sina_network = snap.LoadEdgeList(snap.PNEANet, conf.network_file)
-edge_probs = pickle.load(open('./data/graph_probs_small_small.pickle','rb'))
+edge_probs = pickle.load(open('./data/graph_probs_small_small.pkl','rb'))
 
-edge_dist = pickle.load(open('./data/edge_res_small_small.pickle','rb'))
+edge_dist = pickle.load(open('./data/node_res_small_small_real.pkl','rb'))
 # print(edge_dist['sigma'])
-EdgeStat.sample_probability(
+NodeStat.sample_probability(
         sina_network, 0, edge_dist['mu'], edge_dist['sigma'])
-res_probs = EdgeStat.get_prob_dict(sina_network, 0) 
+res_probs = NodeStat.get_prob_dict(sina_network, 0) 
 
 
 
@@ -97,13 +96,16 @@ for src, v in selected_edges.items():
 	n = len(v)
 	for i in range(len(v)):
 		selected_edges[src][i][1] /= (prob_total/n)
-		selected_edges[src][i][2] /= (res_prob_total/n)
+		if res_prob_total == 0:
+			selected_edges[src][i][2] = 1/n
+		else:
+			selected_edges[src][i][2] /= (res_prob_total/n)
 		min_v = min(min_v, selected_edges[src][i][1])
 		max_v = max(max_v, selected_edges[src][i][1])
 		min_v_res = min(min_v_res, selected_edges[src][i][2])
 		max_v_res = max(max_v_res, selected_edges[src][i][2])
 
-
+print min_v, max_v, min_v_res, max_v_res
 g1 = Digraph('G', engine='fdp')
 g1.graph_attr.update(ranksep = "1.2 equally")
 
@@ -122,8 +124,8 @@ for src, v in selected_edges.items():
 		g1.edge(src, dest, color=getColor(p, min_v,max_v))
 
 for src, v in selected_edges.items():
-	for dest, _, p in v:		
-		g1.edge(src, dest, color=getColor(p, min_v_res,max_v_res))
+	for dest, _, p in v:	
+		g2.edge(src, dest, color=getColor(p, min_v_res,max_v_res))
 
 g1.render(filename='img/truth.gv')
 g2.render(filename='img/res.gv')
