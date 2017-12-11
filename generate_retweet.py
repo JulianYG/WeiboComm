@@ -59,20 +59,19 @@ def assign_time(path_len, min_retweet_time, max_retweet_time):
 
 
 def gen_retweet_set(graph, paths_len_num):
-    with open("./data/artificial_retweet_1000_in.txt",'w+') as save_file:
+    with open("./data/artificial_retweet_5000_in.txt",'w+') as save_file:
         ########assign new probilities
-        probs = assign_prob(graph)
-        print('saving the whole dictionary...')
-        with open("./data/graph_probs_small_small_in.pickle", 'wb') as handle:
-            pickle.dump(probs, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        # probs = assign_prob(graph)
+        # print('saving the whole dictionary...')
+        # with open("./data/graph_probs_small_small_in.pickle", 'wb') as handle:
+        #     pickle.dump(probs, handle, protocol=pickle.HIGHEST_PROTOCOL)
         ########end assign new probilities
 
         ########load previous probilities
-        # load pickle
-        # print('loading probilities...')
-        # with open('./data/graph_probs_small_small.pickle', 'rb') as handle:
-        #   probs = pickle.load(handle)
-          #print paths
+        ## load pickle
+        print('loading probilities...')
+        with open('./data/graph_probs_small_small_in.pickle', 'rb') as handle:
+            probs = pickle.load(handle)
         ########end load probilities
 
         print('generating paths..')
@@ -111,7 +110,7 @@ if __name__ == '__main__':
     lamb = 0.8
     len_num = []
     for i in range(2, 25):
-        num = 1000*lamb*math.exp(-lamb*(i+(np.random.normal(0,0.3))))
+        num = 3000*lamb*math.exp(-lamb*(i+(np.random.normal(0,0.3))))
         len_num.append((i, int(num)))
     print len_num
 

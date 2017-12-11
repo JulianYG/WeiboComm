@@ -278,17 +278,17 @@ class Config:
     def __init__(self):
         
         self.network_file = './data/network_graph_small_small.txt'
-        self.retweet_file = './data/artificial_retweet_1000_in.txt'
-        self.path_dict = './data/path_1000.pkl'
+        self.retweet_file = './data/total.txt'
+        self.path_dict = './data/path_real.pkl'
         self.edge_result = './data/edge_res_small_small.pkl'
         self.node_result = './data/node_res_small_small.pkl'
-        self.ground_truth = './data/prob_ground_truth.pkl'
+        self.ground_truth = './data/graph_probs_small_small_in.pickle'
         self.max_path_len = 25
 
-        self.node_log = './log/node_full.txt'
-        self.node_plot = './log/node_full.png'
-        self.edge_log = './log/edge_full.txt'
-        self.edge_plot = './log/edge_full.png'
+        self.node_log = './log/node_real.txt'
+        self.node_plot = './log/node_real.png'
+        self.edge_log = './log/edge_real.txt'
+        self.edge_plot = './log/edge_real.png'
     
         self.num_examples = 16
         self.num_top = 5
