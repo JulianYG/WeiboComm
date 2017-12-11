@@ -2,7 +2,7 @@
 
 # Dict: sigma, mu for each node
 # retweet_graph: time_stamps
-
+from __future__ import division
 import snap
 import numpy as np
 import pickle
